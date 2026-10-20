@@ -1,0 +1,17 @@
+# Rust
+/src-tauri/target/
+/src-tauri/Cargo.lock.bak
+
+# Node / frontend
+/node_modules/
+/dist/
+
+# Tauri
+/src-tauri/gen/
+
+# macOS
+.DS_Store
+
+# Editores
+.vscode/
+.idea/

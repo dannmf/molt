@@ -1,0 +1,135 @@
+{
+  "project": {
+    "id": "a1b2c3",
+    "name": "molt",
+    "path": "/Users/dev/molt",
+    "kinds": [
+      "rust",
+      "node"
+    ],
+    "totalBytes": 1800000000,
+    "reclaimableBytes": 1200000000,
+    "artifacts": [
+      {
+        "path": "/Users/dev/molt/src-tauri/target",
+        "kind": "rustTarget",
+        "bytes": 900000000,
+        "regenerateHint": "cargo build"
+      },
+      {
+        "path": "/Users/dev/molt/.cache/custom",
+        "kind": {
+          "other": "CustomTool"
+        },
+        "bytes": 1000,
+        "regenerateHint": "custom-tool build"
+      }
+    ],
+    "lastModifiedAt": 1732000000,
+    "git": {
+      "branch": "main",
+      "lastCommitAt": 1732000000,
+      "dirty": true,
+      "unpushedCommits": 2,
+      "hasRemote": true
+    }
+  },
+  "project_without_git": {
+    "id": "d4e5f6",
+    "name": "scratch",
+    "path": "/Users/dev/scratch",
+    "kinds": [
+      "unknown"
+    ],
+    "totalBytes": 0,
+    "reclaimableBytes": 0,
+    "artifacts": [],
+    "lastModifiedAt": 1700000000,
+    "git": null
+  },
+  "cache_entries": [
+    {
+      "id": "npm-cache",
+      "label": "npm cache",
+      "tool": "npm",
+      "paths": [
+        "/Users/dev/.npm/_cacache"
+      ],
+      "bytes": 1400000000,
+      "risk": "safe",
+      "strategy": {
+        "type": "command",
+        "program": "npm",
+        "args": [
+          "cache",
+          "clean",
+          "--force"
+        ]
+      },
+      "description": "Cache de pacotes do npm."
+    },
+    {
+      "id": "xcode-derived-data",
+      "label": "Xcode DerivedData",
+      "tool": "xcode",
+      "paths": [
+        "/Users/dev/Library/Developer/Xcode/DerivedData"
+      ],
+      "bytes": 8200000000,
+      "risk": "rebuildable",
+      "strategy": {
+        "type": "trash",
+        "paths": [
+          "/Users/dev/Library/Developer/Xcode/DerivedData"
+        ]
+      },
+      "description": "Build intermediário do Xcode."
+    }
+  ],
+  "scan_request": {
+    "roots": [
+      "/Users/dev"
+    ],
+    "maxDepth": 6,
+    "ignore": [
+      "node_modules",
+      ".git"
+    ]
+  },
+  "scan_progress": {
+    "scannedDirs": 4200,
+    "projectsFound": 15,
+    "currentPath": "/Users/dev/molt"
+  },
+  "cleanup_request": {
+    "targets": [
+      {
+        "type": "artifact",
+        "path": "/Users/dev/molt/node_modules"
+      },
+      {
+        "type": "project",
+        "path": "/Users/dev/old-project"
+      },
+      {
+        "type": "cache",
+        "id": "npm-cache"
+      }
+    ],
+    "dryRun": false,
+    "allowDirtyGit": false
+  },
+  "cleanup_result": {
+    "freedBytes": 1200000000,
+    "removed": [
+      "/Users/dev/molt/node_modules"
+    ],
+    "failed": [
+      [
+        "/Users/dev/old-project",
+        "projeto com alterações não commitadas"
+      ]
+    ],
+    "dryRun": false
+  }
+}
