@@ -7,9 +7,9 @@
 //! implementações finas em cima de `detect`/`git_info` para não duplicar a
 //! lógica em dois lugares.
 //!
-//! Tamanho não é medido aqui: todo `Artifact` sai com `bytes: 0` (ver
-//! `docs/contract-requests.md` — o scanner precisa medir cada artefato
-//! depois, hoje ele só soma o que já viesse preenchido).
+//! Tamanho não é medido aqui: todo `Artifact` sai com `bytes: 0` — é
+//! `scanner::build_project` quem mede cada artefato depois, com seu próprio
+//! dedup de hardlinks (ver `docs/contract-requests.md`).
 
 use std::fs;
 use std::path::{Path, PathBuf};

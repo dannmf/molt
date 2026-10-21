@@ -296,3 +296,71 @@ Workaround local: aproximação CSS em `components/shell/Sidebar.tsx`. Quem for 
 verdade: setar `transparent: true` em `tauri.conf.json`, chamar `window_vibrancy::apply_vibrancy`
 em `main.rs` ao criar a janela principal, e então a classe `backdrop-blur-xl` pode ficar só como
 reforço visual sobre o vidro nativo (ou ser removida).
+
+---
+
+## Resoluções — feat/integration (2026-10-21)
+
+Nenhuma destas entradas exigiu mudar `model.rs`/`types.ts`: todos os tipos envolvidos
+(`ScanProgress`, `CleanupResult`, `Artifact`, etc.) já cobriam o que faltava; o que faltava
+era ligação real, não forma de dado nova.
+
+- **`Scanner::scan` sem `home`**, **detecção via traits**, **`Mutex<HashSet>` em vez de
+  `DashMap`**, **dedup global por varredura**, **`last_modified_at` = mtime da raiz**,
+  **`__pycache__` agregado por `ArtifactKind`**, **catálogo via `MoltCacheCatalog`**,
+  **simuladores indisponíveis com `bytes: 0`**, **`docker-cache` sem `paths`** — **aceitas
+  sem mudança**. São decisões de implementação interna, documentadas corretamente pelos
+  próprios módulos; nenhuma pedia um campo novo em `model.rs`/`types.ts`.
+
+- **`Artifact.bytes` sempre `0` / `scanner::build_project` não media os artefatos** —
+  **resolvida nesta integração**, não apenas aceita. Esta era uma lacuna real (não uma
+  decisão de design): `build_project` agora mede cada `artifact.path` com um
+  `size::SharedDedup` próprio (dedup escopado ao artefato) antes de medir o `total_bytes`
+  com o dedup compartilhado da varredura, para que os blocos dos artefatos ainda sejam
+  contados integralmente no total. Teste de regressão:
+  `scanner::tests::reclaimable_bytes_reflects_real_artifact_size`. Ao investigar isso,
+  também achei e corrigi um bug correlato em `testkit::sparse_file`: usava só
+  `File::set_len` (um buraco em APFS, sem blocos alocados), mascarando qualquer teste que
+  dependesse do tamanho real das fixtures de projeto — agora escreve dados reais em blocos
+  de 64KB, igual ao padrão já usado localmente em `cleanup::tests`/`caches::tests`.
+
+- **`CleanupContext.caches` além dos 3 campos pedidos** e **`CleanupExecutor`/
+  `StubCleanupExecutor` removidos** — **aceitas sem mudança**; `CleanupContext` não é tipo
+  de `model.rs` (é interno a `cleanup/mod.rs`), e a integração de `commands::run_cleanup`
+  (abaixo) já constrói esse contexto com `home`, `allowed_paths` e `caches` vindos do último
+  `scan_projects`/`list_caches`.
+
+- **Duplicação de `SizeDedup`/resolução de binário entre `scanner`, `caches` e `cleanup`** —
+  **aceita, não resolvida nesta integração**. Extrair um módulo público compartilhado exigiria
+  mudar a posse de pastas desses três módulos (fora do escopo de uma integração; é uma
+  mudança estrutural, não uma ligação de módulos). Mantido como débito técnico conhecido.
+
+- **`CleanupResult.failed` com `PathBuf` sintético `cache:{id}`** — **recusada por agora**.
+  O frontend (`types.ts: failed: Array<[string, string]>`) ainda não faz nenhum tratamento
+  especial desse campo (sem chamada a `revealInFinder` a partir dele, por exemplo), então o
+  marcador sintético não causa incoerência visível hoje. Mudar `model.rs` para
+  `failed: Vec<(CleanupTarget, String)>` é uma mudança de contrato maior (atinge
+  `types.ts`, o snapshot JSON e qualquer UI futura que listar falhas) sem benefício
+  imediato — fica registrada para quando a UI efetivamente precisar diferenciar falha de
+  path vs. falha de cache.
+
+- **Preview do dry run calculado no frontend** (`lib/cleanupPlan.ts`) — **aceita sem
+  mudança**. Agora que `reclaimable_bytes`/`Artifact.bytes` são medidos de verdade (item
+  acima), o preview local usa os mesmos números que `run_cleanup(dryRun: true)` devolveria
+  no backend, então não há mais risco de incoerência entre o que o modal mostra e o que a
+  limpeza real faria. Recalcular o preview via uma chamada real ao backend antes de todo
+  clique em "Limpar" adicionaria uma viagem de rede sem mudar o resultado mostrado.
+
+- **Progresso de varredura simulado, sem ouvir `scan://progress`** — **resolvida nesta
+  integração**. `commands::scan_projects` agora emite o evento Tauri `scan://progress` de
+  verdade durante a varredura; `src/api/client.ts` ganhou `onScanProgress(callback):
+  () => void` (assinatura real via `@tauri-apps/api/event`, contrato aditivo — não mudou
+  nenhuma função existente); `src/hooks/useScan.ts` troca o `setInterval` simulado por essa
+  assinatura real.
+
+- **Vibrancy nativa da sidebar aproximada com CSS** — **resolvida nesta integração**.
+  `dirs` e `window-vibrancy` já existiam como dependências transitivas (ver `Cargo.lock`) e
+  foram promovidas a dependências diretas em `Cargo.toml`. `tauri.conf.json` ganhou
+  `"transparent": true` na janela principal e `main.rs`/`lib.rs` chama
+  `window_vibrancy::apply_vibrancy` na janela ao iniciar. `backdrop-blur-xl` em
+  `Sidebar.tsx` foi mantido como reforço visual sobre o vidro nativo, não removido.

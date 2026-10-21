@@ -1913,6 +1913,7 @@ dependencies = [
 name = "molt"
 version = "0.1.0"
 dependencies = [
+ "dirs",
  "git2",
  "jwalk",
  "rayon",
@@ -1923,6 +1924,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.21",
  "trash",
+ "window-vibrancy",
 ]
 
 [[package]]

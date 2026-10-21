@@ -43,10 +43,23 @@ fn walk(
     Ok(())
 }
 
+/// Apesar do nome (mantido por compatibilidade com o resto do arquivo), escreve
+/// dados reais em blocos em vez de só `set_len`: em APFS, um arquivo truncado
+/// sem nunca receber escrita é só um buraco (`st_blocks == 0`), o que faria
+/// qualquer teste que mede "bytes no disco" sobre esta fixture ver sempre 0 —
+/// mesmo bug já corrigido localmente em `cleanup::tests` e `caches::tests`.
 fn sparse_file(path: &Path, bytes: u64) -> io::Result<()> {
+    use std::io::Write;
+
     fs::create_dir_all(path.parent().unwrap())?;
-    let file = File::create(path)?;
-    file.set_len(bytes)?;
+    let mut file = File::create(path)?;
+    let chunk = vec![0u8; 64 * 1024];
+    let mut remaining = bytes;
+    while remaining > 0 {
+        let n = remaining.min(chunk.len() as u64) as usize;
+        file.write_all(&chunk[..n])?;
+        remaining -= n as u64;
+    }
     Ok(())
 }
 
@@ -162,7 +175,7 @@ pub fn fixture_flutter_project(
     fs::create_dir_all(&root)?;
     fs::write(
         root.join("pubspec.yaml"),
-        format!("name: {name}\nversion: 0.1.0\n"),
+        format!("name: {name}\nversion: 0.1.0\ndependencies:\n  flutter:\n    sdk: flutter\n"),
     )?;
 
     let build = root.join("build");

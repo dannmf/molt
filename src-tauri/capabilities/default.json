@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permissões padrão da janela principal do Molt",
+  "windows": ["main"],
+  "permissions": ["core:default", "core:event:default"]
+}
