@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useCleanup } from "../../hooks/useCleanup";
 import { canConfirmCleanup } from "../../lib/cleanupGate";
 import type { CleanupPlan } from "../../lib/cleanupPlan";
-import { formatBytes } from "../../lib/format";
+import { formatBytes, pathBasename } from "../../lib/format";
 import { AlertIcon } from "../icons/Icons";
 
 /** Tempo simulado do "dry run" antes do botão Confirmar liberar. Não há chamada real
@@ -76,9 +76,12 @@ export function ConfirmCleanupModal({ plan, onClose, onConfirmed }: ConfirmClean
             <ul className="divide-y divide-black/5 dark:divide-white/5">
               {plan.preview.map((item) => (
                 <li key={item.path} className="flex items-start justify-between gap-3 px-3 py-2 text-sm">
-                  <span className="break-all text-neutral-700 dark:text-neutral-300" title={item.path}>
-                    {item.path}
-                  </span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-neutral-800 dark:text-neutral-200">{pathBasename(item.path)}</p>
+                    <p className="break-all text-xs text-neutral-500 dark:text-neutral-500" title={item.path}>
+                      {item.path}
+                    </p>
+                  </div>
                   <span className="shrink-0 tabular-nums text-neutral-500 dark:text-neutral-400">{formatBytes(item.bytes)}</span>
                 </li>
               ))}
