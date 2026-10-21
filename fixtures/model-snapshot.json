@@ -94,6 +94,9 @@
     "ignore": [
       "node_modules",
       ".git"
+    ],
+    "excludedPaths": [
+      "/Users/dev/old-project"
     ]
   },
   "scan_progress": {

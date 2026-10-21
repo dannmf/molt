@@ -106,6 +106,7 @@ fn build_snapshot() -> ModelSnapshot {
         roots: vec![PathBuf::from("/Users/dev")],
         max_depth: 6,
         ignore: vec!["node_modules".to_string(), ".git".to_string()],
+        excluded_paths: vec![PathBuf::from("/Users/dev/old-project")],
     };
 
     let scan_progress = ScanProgress {

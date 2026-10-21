@@ -12,6 +12,8 @@ export function OnboardingView() {
   const addRoot = useAppStore((state) => state.addRoot);
   const removeRoot = useAppStore((state) => state.removeRoot);
   const markScanned = useAppStore((state) => state.markScanned);
+  const excludedPaths = useAppStore((state) => state.excludedPaths);
+  const includePath = useAppStore((state) => state.includePath);
   const { scan, isScanning, isError, progressPct } = useScan();
   const [customRoot, setCustomRoot] = useState("");
 
@@ -117,6 +119,30 @@ export function OnboardingView() {
             Procurar
           </button>
         </div>
+
+        {excludedPaths.length > 0 && (
+          <>
+            <h2 className="mt-6 text-sm font-medium text-neutral-700 dark:text-neutral-300">Pastas ignoradas</h2>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {excludedPaths.map((path) => (
+                <li
+                  key={path}
+                  className="flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1 text-sm text-neutral-700 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-300"
+                >
+                  {path}
+                  <button
+                    type="button"
+                    onClick={() => includePath(path)}
+                    aria-label={`Parar de ignorar ${path}`}
+                    className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                  >
+                    <XIcon className="h-3 w-3" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
         <button
           type="button"

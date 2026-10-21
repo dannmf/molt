@@ -79,6 +79,7 @@ export interface ScanRequest {
   roots: string[];
   maxDepth: number;
   ignore: string[];
+  excludedPaths: string[];
 }
 
 export interface ScanProgress {

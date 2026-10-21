@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import type { ProjectKind } from "../types";
+import { loadExcludedPaths, saveExcludedPaths } from "../lib/exclusions";
 import type { ProjectFilters, ProjectSortKey, SortDirection } from "../lib/projects";
 import { EMPTY_FILTERS } from "../lib/projects";
 import type { Theme } from "../lib/theme";
@@ -28,6 +29,7 @@ interface AppState {
   filters: ProjectFilters;
   selectedIds: Set<string>;
   theme: Theme;
+  excludedPaths: string[];
 
   setView: (view: AppView) => void;
   setTheme: (theme: Theme) => void;
@@ -35,6 +37,8 @@ interface AppState {
   addRoot: (root: string) => void;
   removeRoot: (root: string) => void;
   toggleRoot: (root: string) => void;
+  excludePath: (path: string) => void;
+  includePath: (path: string) => void;
   markScanned: () => void;
   setSort: (key: ProjectSortKey) => void;
   toggleKindFilter: (kind: ProjectKind) => void;
@@ -54,6 +58,7 @@ export const useAppStore = create<AppState>((set) => ({
   filters: EMPTY_FILTERS,
   selectedIds: new Set(),
   theme: initialTheme(),
+  excludedPaths: loadExcludedPaths(),
 
   setView: (view) => set({ view }),
   setTheme: (theme) => set({ theme }),
@@ -70,6 +75,23 @@ export const useAppStore = create<AppState>((set) => ({
         ? { roots: state.roots.filter((r) => r !== root) }
         : { roots: [...state.roots, root] },
     ),
+
+  excludePath: (path) =>
+    set((state) => {
+      if (state.excludedPaths.includes(path)) {
+        return state;
+      }
+      const excludedPaths = [...state.excludedPaths, path];
+      saveExcludedPaths(excludedPaths);
+      return { excludedPaths };
+    }),
+
+  includePath: (path) =>
+    set((state) => {
+      const excludedPaths = state.excludedPaths.filter((excluded) => excluded !== path);
+      saveExcludedPaths(excludedPaths);
+      return { excludedPaths };
+    }),
 
   markScanned: () => set({ hasScanned: true, view: "projects" }),
 

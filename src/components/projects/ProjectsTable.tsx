@@ -2,7 +2,7 @@ import type { Project } from "../../types";
 import { formatBytes, formatRelativeDate } from "../../lib/format";
 import type { ProjectSortKey, SortDirection } from "../../lib/projects";
 import { useAppStore } from "../../store/useAppStore";
-import { TargetIcon, ChevronDownIcon, ChevronUpIcon, FolderIcon, TrashIcon } from "../icons/Icons";
+import { TargetIcon, ChevronDownIcon, ChevronUpIcon, EyeOffIcon, FolderIcon, TrashIcon } from "../icons/Icons";
 import { revealInFinder } from "../../api/client";
 import { GitBadges } from "./GitBadges";
 import { StackBadge } from "./StackBadge";
@@ -32,9 +32,10 @@ interface ProjectsTableProps {
   projects: Project[];
   onCleanArtifacts: (project: Project) => void;
   onTrashProject: (project: Project) => void;
+  onIgnoreProject: (project: Project) => void;
 }
 
-export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject }: ProjectsTableProps) {
+export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject, onIgnoreProject }: ProjectsTableProps) {
   const sortKey = useAppStore((state) => state.sortKey);
   const sortDirection = useAppStore((state) => state.sortDirection);
   const setSort = useAppStore((state) => state.setSort);
@@ -140,6 +141,14 @@ export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject }: Pr
                   className="rounded p-1.5 text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/5"
                 >
                   <FolderIcon />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onIgnoreProject(project)}
+                  title="Ignorar esta pasta em futuras varreduras"
+                  className="rounded p-1.5 text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/5"
+                >
+                  <EyeOffIcon />
                 </button>
               </div>
             </td>

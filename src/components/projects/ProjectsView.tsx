@@ -19,6 +19,7 @@ export function ProjectsView() {
   const filters = useAppStore((state) => state.filters);
   const selectedIds = useAppStore((state) => state.selectedIds);
   const clearSelection = useAppStore((state) => state.clearSelection);
+  const excludePath = useAppStore((state) => state.excludePath);
 
   const [plan, setPlan] = useState<CleanupPlan | null>(null);
 
@@ -36,6 +37,11 @@ export function ProjectsView() {
 
   function handleTrashProject(project: Project) {
     setPlan(planForProjectTrash(project));
+  }
+
+  function handleIgnoreProject(project: Project) {
+    excludePath(project.path);
+    removeProjects([project.id]);
   }
 
   function handleCleanSelected() {
@@ -58,7 +64,12 @@ export function ProjectsView() {
       <ProjectsSummaryBar totals={totals} projectCount={projects.length} />
       <FiltersBar availableKinds={availableKinds} />
       <div className="flex-1 overflow-y-auto">
-        <ProjectsTable projects={sorted} onCleanArtifacts={handleCleanArtifacts} onTrashProject={handleTrashProject} />
+        <ProjectsTable
+          projects={sorted}
+          onCleanArtifacts={handleCleanArtifacts}
+          onTrashProject={handleTrashProject}
+          onIgnoreProject={handleIgnoreProject}
+        />
       </div>
       <SelectionBar selectedCount={selectedIds.size} reclaimableBytes={selectedReclaimableBytes} onCleanSelected={handleCleanSelected} />
 
