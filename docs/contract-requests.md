@@ -98,3 +98,47 @@ Workaround local: nenhum — aceito como aproximação. Se a UI precisar do mtim
 verdade" (ex.: para ordenar por "projeto mexido mais recentemente"), dá pra calcular
 isso de carona no mesmo walk que já mede `total_bytes` (`scanner::size::SharedDedup`),
 mas isso é uma mudança de escopo que vale coordenar antes.
+
+## 2026-10-21 — feat/caches — catálogo implementado via `MoltCacheCatalog`/`list_caches`, sem novo tipo de contrato
+
+O que: a tarefa pedia `list_caches(home: &Path) -> Vec<CacheEntry>`. O trait já existente
+em `caches/mod.rs` (`CacheCatalog::list(&self, home: &Path) -> Result<Vec<CacheEntry>,
+AppError>`) continua com a mesma assinatura; `StubCacheCatalog` foi trocado por
+`MoltCacheCatalog`, que chama a função livre `list_caches` (infalível, sempre `Vec`) e
+embrulha em `Ok(..)`. Nenhuma mudança em `model.rs`/`commands.rs`.
+
+Por quê: evita duplicar o contrato do trait com um tipo novo, mesmo padrão adotado em
+`feat/scanner`/`feat/detectors`.
+
+Workaround local: nenhum necessário.
+
+## 2026-10-21 — feat/caches — "simuladores indisponíveis" é a única entrada que pode aparecer com `bytes: 0`
+
+O que: todas as outras entradas do catálogo só aparecem se o caminho existir e ocupar
+bytes > 0. A entrada `core-simulator-unavailable` é a exceção pedida explicitamente na
+tarefa: aparece sempre que o binário `xcrun` está no `PATH`, mesmo que o tamanho não
+possa ser estimado (`bytes: 0`, com a descrição deixando isso explícito).
+
+Por quê: a existência dessa entrada depende da ferramenta de limpeza (`xcrun simctl`)
+estar disponível, não de medir um diretório específico — o tamanho mostrado é sempre só
+uma estimativa a partir do diretório de todos os dispositivos simulados (não dá pra
+saber qual é "indisponível" sem rodar `simctl list devices`, fora do escopo de
+listagem).
+
+Workaround local: nenhum — comportamento pedido na tarefa.
+
+## 2026-10-21 — feat/caches — `docker-cache` e `homebrew-cache`/`pnpm-store` não populam `CacheEntry.paths` com um caminho confiável em todos os casos
+
+O que: `docker-cache` sempre sai com `paths: vec![]` (o espaço reclamável do Docker vive
+dentro da VM/daemon, não há um diretório único no host para apontar). `pnpm-store` e
+`homebrew-cache` preenchem `paths` com o caminho descoberto via `pnpm store path`/`brew
+--cache` quando o binário existe, e com um caminho padrão quando não existe (só para
+pnpm, que tem fallback para `Library/pnpm/store/v3`; `homebrew-cache` não aparece sem o
+binário `brew`, já que não há um caminho padrão confiável sem consultar a ferramenta).
+
+Por quê: `CacheEntry.paths` é informativo (mostrar "o que seria limpo"); para entradas
+cuja estratégia é `Command`, o path real de disco nem sempre é descobrível sem rodar o
+próprio comando, e às vezes (Docker) nem existe um path único no host.
+
+Workaround local: nenhum — quem consumir `CacheEntry.paths` na UI deve tratar uma lista
+vazia como "sem preview de caminho disponível", não como erro.
