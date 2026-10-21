@@ -4,6 +4,13 @@
 
 const UNITS = ["B", "KB", "MB", "GB", "TB", "PB"] as const;
 
+/** Extrai o último segmento de um caminho (nome do arquivo ou pasta). */
+export function pathBasename(path: string): string {
+  const trimmed = path.replace(/\/+$/, "");
+  const lastSlash = trimmed.lastIndexOf("/");
+  return lastSlash === -1 ? trimmed : trimmed.slice(lastSlash + 1);
+}
+
 /** Formata bytes em base 1000 (KB/MB/GB...), como o Finder. */
 export function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { daysSince, formatBytes, formatRelativeDate } from "./format";
+import { daysSince, formatBytes, formatRelativeDate, pathBasename } from "./format";
 
 describe("formatBytes", () => {
   it("formata zero e negativos como 0 B", () => {
@@ -54,5 +54,19 @@ describe("daysSince", () => {
   it("conta dias inteiros desde o timestamp", () => {
     expect(daysSince(now - 2.5 * 24 * 60 * 60, now)).toBe(2);
     expect(daysSince(now, now)).toBe(0);
+  });
+});
+
+describe("pathBasename", () => {
+  it("extrai o último segmento de um caminho", () => {
+    expect(pathBasename("/Users/daniel/www/portifolio/node_modules")).toBe("node_modules");
+  });
+
+  it("ignora barras finais", () => {
+    expect(pathBasename("/Users/daniel/www/portifolio/node_modules/")).toBe("node_modules");
+  });
+
+  it("devolve o próprio valor quando não há barra", () => {
+    expect(pathBasename("node_modules")).toBe("node_modules");
   });
 });
