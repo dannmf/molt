@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import type { ProjectKind } from "../types";
 import { loadExcludedPaths, saveExcludedPaths } from "../lib/exclusions";
+import { loadLastScanAt, saveLastScanAt } from "../lib/lastScan";
 import type { ProjectFilters, ProjectSortKey, SortDirection } from "../lib/projects";
 import { EMPTY_FILTERS } from "../lib/projects";
 import type { Theme } from "../lib/theme";
@@ -30,6 +31,7 @@ interface AppState {
   selectedIds: Set<string>;
   theme: Theme;
   excludedPaths: string[];
+  lastScanAt: number | null;
 
   setView: (view: AppView) => void;
   setTheme: (theme: Theme) => void;
@@ -59,6 +61,7 @@ export const useAppStore = create<AppState>((set) => ({
   selectedIds: new Set(),
   theme: initialTheme(),
   excludedPaths: loadExcludedPaths(),
+  lastScanAt: loadLastScanAt(),
 
   setView: (view) => set({ view }),
   setTheme: (theme) => set({ theme }),
@@ -93,7 +96,11 @@ export const useAppStore = create<AppState>((set) => ({
       return { excludedPaths };
     }),
 
-  markScanned: () => set({ hasScanned: true, view: "projects" }),
+  markScanned: () => {
+    const lastScanAt = Math.floor(Date.now() / 1000);
+    saveLastScanAt(lastScanAt);
+    set({ hasScanned: true, view: "projects", lastScanAt });
+  },
 
   setSort: (key) =>
     set((state) => ({
