@@ -99,6 +99,41 @@ verdade" (ex.: para ordenar por "projeto mexido mais recentemente"), dá pra cal
 isso de carona no mesmo walk que já mede `total_bytes` (`scanner::size::SharedDedup`),
 mas isso é uma mudança de escopo que vale coordenar antes.
 
+## 2026-10-20 — feat/detectors — `Artifact.bytes` sempre `0`; `scanner::build_project` precisa medir cada artefato
+
+O que: a tarefa do módulo `detectors` foi explícita — "Sem medir tamanho (o scanner
+mede)". `MoltArtifactDetector::detect` (o adapter que implementa o trait `ArtifactDetector`
+já consumido por `scanner/mod.rs`) sempre devolve `Artifact { bytes: 0, .. }`.
+
+Por quê: medir tamanho é responsabilidade do scanner (`scanner::size`), não do detector —
+eles têm acesso ao `SharedDedup` para fazer isso corretamente (hardlink dedup, não seguir
+symlink), e duplicar essa lógica aqui violaria a divisão de responsabilidades do bootstrap.
+
+Workaround local: nenhum possível dentro de `detectors/` — isso é uma lacuna real em
+`scanner::build_project`, que hoje faz
+`let reclaimable_bytes = artifacts.iter().map(|a| a.bytes).sum();` assumindo que
+`artifacts[].bytes` já vem preenchido. Com os detectors reais, essa soma vai dar `0`
+sempre. Quem integrar os dois módulos precisa trocar essa linha para medir o tamanho de
+cada `artifact.path` (via `scanner::size`) antes de somar, depois que os artefatos vierem
+do detector.
+
+## 2026-10-20 — feat/detectors — `__pycache__` "agregado" como vários `Artifact`s do mesmo `ArtifactKind`, não um só
+
+O que: a tarefa pediu "`__pycache__` recursivo agregado como um artefato". Como
+`model::Artifact.path` é um único `PathBuf`, não dá pra representar várias pastas
+`__pycache__` espalhadas pela árvore como um artefato só. `detect_artifacts` devolve uma
+entrada `(path, ArtifactKind::PythonCache, hint)` para cada `__pycache__` encontrado na
+varredura recursiva (podem ser várias por projeto).
+
+Por quê: manter `Artifact.path` como está (sem virar `Vec<PathBuf>`) evitaria uma mudança
+de contrato em `model.rs`/`types.ts` fora do escopo deste worktree.
+
+Workaround local: nenhum — interpretação aceita de "agregado" como "todas encontradas
+pela mesma regra/walk recursivo", não "uma única entrada". Se a UI quiser mostrar
+`__pycache__` como uma linha agregada só (ex.: "12 pastas __pycache__, 40 MB"), isso
+precisa ser feito no frontend somando as entradas com `kind == PythonCache`, ou isso
+exigiria mudar `Artifact.path` para `Vec<PathBuf>` em `model.rs` (fora de escopo aqui).
+
 ## 2026-10-21 — feat/caches — catálogo implementado via `MoltCacheCatalog`/`list_caches`, sem novo tipo de contrato
 
 O que: a tarefa pedia `list_caches(home: &Path) -> Vec<CacheEntry>`. O trait já existente
