@@ -64,7 +64,7 @@ export function ConfirmCleanupModal({ plan, onClose, onConfirmed }: ConfirmClean
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-xl border border-black/10 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-neutral-900">
+      <div className="w-full max-w-lg rounded-xl border border-black/10 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-neutral-900">
         <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{plan.title}</h2>
 
         <div className="mt-4 max-h-56 overflow-y-auto rounded-lg border border-black/5 bg-black/[0.02] dark:border-white/5 dark:bg-white/[0.03]">
@@ -75,8 +75,10 @@ export function ConfirmCleanupModal({ plan, onClose, onConfirmed }: ConfirmClean
           ) : (
             <ul className="divide-y divide-black/5 dark:divide-white/5">
               {plan.preview.map((item) => (
-                <li key={item.path} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                  <span className="truncate text-neutral-700 dark:text-neutral-300">{item.path}</span>
+                <li key={item.path} className="flex items-start justify-between gap-3 px-3 py-2 text-sm">
+                  <span className="break-all text-neutral-700 dark:text-neutral-300" title={item.path}>
+                    {item.path}
+                  </span>
                   <span className="shrink-0 tabular-nums text-neutral-500 dark:text-neutral-400">{formatBytes(item.bytes)}</span>
                 </li>
               ))}
