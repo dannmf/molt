@@ -2,7 +2,7 @@ import type { Project } from "../../types";
 import { formatBytes, formatRelativeDate } from "../../lib/format";
 import type { ProjectSortKey, SortDirection } from "../../lib/projects";
 import { useAppStore } from "../../store/useAppStore";
-import { BroomIcon, ChevronDownIcon, ChevronUpIcon, FolderIcon, TrashIcon } from "../icons/Icons";
+import { TargetIcon, ChevronDownIcon, ChevronUpIcon, FolderIcon, TrashIcon } from "../icons/Icons";
 import { revealInFinder } from "../../api/client";
 import { GitBadges } from "./GitBadges";
 import { StackBadge } from "./StackBadge";
@@ -123,7 +123,7 @@ export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject }: Pr
                   title="Limpar artefatos"
                   className="rounded p-1.5 text-neutral-500 hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30 dark:text-neutral-400 dark:hover:bg-white/5"
                 >
-                  <BroomIcon />
+                  <TargetIcon />
                 </button>
                 <button
                   type="button"

@@ -1,6 +1,6 @@
 import { formatBytes } from "../../lib/format";
 import type { CacheEntry } from "../../types";
-import { BroomIcon } from "../icons/Icons";
+import { TargetIcon } from "../icons/Icons";
 import { RiskPill } from "./RiskPill";
 
 interface CacheCardProps {
@@ -30,7 +30,7 @@ export function CacheCard({ cache, onClean }: CacheCardProps) {
           onClick={() => onClean(cache)}
           className="flex items-center gap-1.5 rounded-md border border-black/10 px-2.5 py-1.5 text-sm font-medium text-neutral-600 hover:bg-black/5 dark:border-white/10 dark:text-neutral-400 dark:hover:bg-white/5"
         >
-          <BroomIcon className="h-4 w-4" />
+          <TargetIcon className="h-4 w-4" />
           Limpar
         </button>
       </div>

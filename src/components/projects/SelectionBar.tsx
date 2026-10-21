@@ -1,6 +1,6 @@
 import { formatBytes } from "../../lib/format";
 import { useAppStore } from "../../store/useAppStore";
-import { BroomIcon, XIcon } from "../icons/Icons";
+import { TargetIcon, XIcon } from "../icons/Icons";
 
 interface SelectionBarProps {
   selectedCount: number;
@@ -28,7 +28,7 @@ export function SelectionBar({ selectedCount, reclaimableBytes, onCleanSelected 
         onClick={onCleanSelected}
         className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
       >
-        <BroomIcon className="h-4 w-4" />
+        <TargetIcon className="h-4 w-4" />
         Liberar {formatBytes(reclaimableBytes)}
       </button>
     </div>

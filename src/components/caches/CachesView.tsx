@@ -4,6 +4,7 @@ import { useCachesQuery, useRemoveCacheEntry } from "../../hooks/useCachesQuery"
 import { planForCache, type CleanupPlan } from "../../lib/cleanupPlan";
 import type { CacheEntry } from "../../types";
 import { ConfirmCleanupModal } from "../shared/ConfirmCleanupModal";
+import { Spinner } from "../shared/Spinner";
 import { CacheCard } from "./CacheCard";
 
 function groupByTool(caches: CacheEntry[]): Map<string, CacheEntry[]> {
@@ -17,7 +18,7 @@ function groupByTool(caches: CacheEntry[]): Map<string, CacheEntry[]> {
 }
 
 export function CachesView() {
-  const { data: caches } = useCachesQuery();
+  const { data: caches, isPending } = useCachesQuery();
   const removeCacheEntry = useRemoveCacheEntry();
   const [plan, setPlan] = useState<CleanupPlan | null>(null);
 
@@ -31,22 +32,31 @@ export function CachesView() {
 
   return (
     <div className="h-full overflow-y-auto px-6 py-6">
-      {groups.size === 0 && (
+      {isPending && (
+        <div className="flex flex-col items-center justify-center gap-3 py-20 text-sm text-neutral-500 dark:text-neutral-400">
+          <Spinner className="h-6 w-6" />
+          Verificando caches...
+        </div>
+      )}
+
+      {!isPending && groups.size === 0 && (
         <p className="text-sm text-neutral-500 dark:text-neutral-400">Nenhuma cache encontrada.</p>
       )}
 
-      <div className="flex flex-col gap-6">
-        {[...groups.entries()].map(([tool, entries]) => (
-          <section key={tool}>
-            <h2 className="mb-2 text-sm font-semibold text-neutral-500 dark:text-neutral-400">{tool}</h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {entries.map((cache) => (
-                <CacheCard key={cache.id} cache={cache} onClean={(entry) => setPlan(planForCache(entry))} />
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
+      {!isPending && (
+        <div className="flex flex-col gap-6">
+          {[...groups.entries()].map(([tool, entries]) => (
+            <section key={tool}>
+              <h2 className="mb-2 text-sm font-semibold text-neutral-500 dark:text-neutral-400">{tool}</h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {entries.map((cache) => (
+                  <CacheCard key={cache.id} cache={cache} onClean={(entry) => setPlan(planForCache(entry))} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
 
       <ConfirmCleanupModal plan={plan} onClose={() => setPlan(null)} onConfirmed={handleConfirmed} />
     </div>

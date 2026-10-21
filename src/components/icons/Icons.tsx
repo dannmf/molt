@@ -22,12 +22,12 @@ export function FolderIcon({ className = base }: IconProps) {
   );
 }
 
-export function BroomIcon({ className = base }: IconProps) {
+export function TargetIcon({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className}>
-      <path d="M19 3 11 11" strokeLinecap="round" />
-      <path d="M8.5 9.5 14 11.5" strokeLinecap="round" />
-      <path d="M11 11 4.5 19.5M11 11 7.5 21M11 11 10.5 21.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="7" />
+      <circle cx="12" cy="12" r="2" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" strokeLinecap="round" />
     </svg>
   );
 }
