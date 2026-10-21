@@ -1,10 +1,20 @@
+import { CachesView } from "./components/caches/CachesView";
+import { OnboardingView } from "./components/onboarding/OnboardingView";
+import { ProjectsView } from "./components/projects/ProjectsView";
+import { Sidebar } from "./components/shell/Sidebar";
+import { useAppStore } from "./store/useAppStore";
+
 export default function App() {
+  const view = useAppStore((state) => state.view);
+
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-neutral-950 text-neutral-100">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold">Molt</h1>
-        <p className="mt-2 text-sm text-neutral-400">Em construção.</p>
-      </div>
+    <div className="flex h-screen w-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+      <Sidebar />
+      <main className="flex-1 overflow-hidden">
+        {view === "onboarding" && <OnboardingView />}
+        {view === "projects" && <ProjectsView />}
+        {view === "caches" && <CachesView />}
+      </main>
     </div>
   );
 }

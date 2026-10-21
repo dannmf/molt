@@ -246,3 +246,53 @@ Workaround local: nenhum — `commands::run_cleanup` continua precisando de inte
 do escopo deste worktree, é trabalho de bootstrap/integração): construir um
 `CleanupContext` real a partir dos resultados de `scan_projects`/`list_caches` e chamar
 `cleanup::run_cleanup` em vez de devolver o mock atual.
+
+## 2026-10-21 — feat/ui — preview do dry run calculado no frontend, não vindo de `runCleanup`
+
+O que: a tarefa pedia "sempre um modal com dry run primeiro (lista do que vai sair + total)".
+O mock de `runCleanup` em `src/api/client.ts` sempre devolve `{freedBytes: 0, removed: [],
+failed: [], dryRun}`, independente do `CleanupRequest` enviado — não computa nada a partir dos
+targets recebidos. `src/lib/cleanupPlan.ts` monta esse preview (lista de paths + total em bytes)
+direto a partir dos dados de `Project`/`CacheEntry` já carregados no cache do React Query, sem
+chamar `runCleanup` para isso. O modal (`ConfirmCleanupModal.tsx`) simula um atraso de 450ms antes
+de liberar o botão "Confirmar", só para preservar a sensação de um dry run real acontecendo.
+
+Por quê: sem isso, o modal mostraria "0 itens, 0 bytes" sempre, o que não atende ao requisito.
+
+Workaround local: `lib/cleanupPlan.ts` (fora de `types.ts`/`client.ts`, que são contrato).
+Quando `runCleanup` ganhar uma implementação real que calcule o preview a partir do backend
+(ex.: um modo `dryRun: true` que devolve `removed` preenchido), o modal deve passar a usar essa
+resposta em vez do cálculo local, e `cleanupPlan.ts` pode encolher para só montar o `CleanupTarget[]`.
+
+## 2026-10-21 — feat/ui — progresso de varredura simulado no frontend, sem ouvir `scan://progress`
+
+O que: a tarefa pedia uma "barra de progresso durante o scan". `src/api/client.ts` não expõe
+nenhuma forma de assinar o evento Tauri `scan://progress` (só a função `scanProjects(req)`, que
+devolve uma Promise). `src/hooks/useScan.ts` simula o progresso com um `window.setInterval` local
+enquanto a Promise de `scanProjects` está pendente, pulando para 100% em `onSuccess`.
+
+Por quê: assinar um evento Tauri real exigiria adicionar uma função a `client.ts` (contrato,
+fora do escopo deste worktree) ou chamar `invoke`/`listen` direto num componente, o que o
+enunciado da tarefa proíbe explicitamente ("toda chamada passa pelo client.ts, nunca invoke()
+direto num componente").
+
+Workaround local: `hooks/useScan.ts`. Se/quando `client.ts` expuser uma forma de assinar
+`scan://progress` (ex.: `onScanProgress(callback): () => void`), troque o timer simulado por essa
+assinatura real.
+
+## 2026-10-21 — feat/ui — vibrancy nativa da sidebar aproximada com `backdrop-blur` + fundo translúcido
+
+O que: a tarefa pedia "sidebar com vibrancy se o Tauri permitir". Vibrancy nativa no macOS
+(`NSVisualEffectView`) exigiria `"transparent": true` em `src-tauri/tauri.conf.json` e ligar o
+crate `window-vibrancy` (já em `Cargo.toml`, mas não usado em nenhum lugar) no processo de criação
+da janela em `src-tauri/src/main.rs`. Ambos os arquivos estão fora do escopo deste worktree
+(`src-tauri/`, não `src/`). `Sidebar.tsx` usa uma aproximação só em CSS: `backdrop-blur-xl` +
+fundo branco/preto translúcido (`bg-white/60 dark:bg-neutral-900/40`).
+
+Por quê: habilitar vibrancy nativa é uma mudança de configuração de janela/processo Rust, não de
+componente React.
+
+Workaround local: aproximação CSS em `components/shell/Sidebar.tsx`. Quem for integrar a janela de
+verdade: setar `transparent: true` em `tauri.conf.json`, chamar `window_vibrancy::apply_vibrancy`
+em `main.rs` ao criar a janela principal, e então a classe `backdrop-blur-xl` pode ficar só como
+reforço visual sobre o vidro nativo (ou ser removida).
