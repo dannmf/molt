@@ -1,6 +1,6 @@
 import type { AppView } from "../../store/useAppStore";
 import { useAppStore } from "../../store/useAppStore";
-import { BoxIcon, MoonIcon, ScanIcon, SunIcon, TrashIcon } from "../icons/Icons";
+import { BoxIcon, ContainerIcon, MoonIcon, ScanIcon, SunIcon, TrashIcon } from "../icons/Icons";
 
 interface NavItem {
   view: AppView;
@@ -11,6 +11,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { view: "projects", label: "Projetos", icon: BoxIcon },
   { view: "caches", label: "Caches", icon: TrashIcon },
+  { view: "docker", label: "Docker", icon: ContainerIcon },
 ];
 
 export function Sidebar() {

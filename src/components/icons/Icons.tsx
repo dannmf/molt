@@ -123,3 +123,14 @@ export function BoxIcon({ className = base }: IconProps) {
     </svg>
   );
 }
+
+export function ContainerIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className}>
+      <rect x="3" y="4" width="7" height="6" rx="1" />
+      <rect x="12" y="4" width="9" height="6" rx="1" />
+      <rect x="3" y="14" width="9" height="6" rx="1" />
+      <rect x="14" y="14" width="7" height="6" rx="1" />
+    </svg>
+  );
+}

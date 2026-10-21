@@ -115,6 +115,28 @@ pub struct CacheEntry {
     pub description: String,
 }
 
+/// Container Docker em execução, listado só para visibilidade (sem ação de limpeza).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DockerContainerInfo {
+    pub id: String,
+    pub name: String,
+    pub image: String,
+    pub status: String,
+}
+
+/// Catálogo de recursos Docker reclamáveis, separado do catálogo de caches de dev.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DockerSummary {
+    pub available: bool,
+    pub dangling_images: Vec<CacheEntry>,
+    pub stopped_containers: Vec<CacheEntry>,
+    pub running_containers: Vec<DockerContainerInfo>,
+    pub orphan_volumes: Vec<CacheEntry>,
+    pub build_cache: Option<CacheEntry>,
+}
+
 /// Parâmetros de uma varredura de disco.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
