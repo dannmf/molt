@@ -1,12 +1,16 @@
 //! Teste de fumaça: cada comando Tauri compila, é alcançável pelo invoke_handler
-//! e devolve os dados mock esperados.
+//! e devolve dados reais (contra fixtures do testkit, não mocks).
 
+use std::sync::Mutex;
+
+use molt_lib::commands::AppState;
 use molt_lib::model::{CleanupRequest, CleanupTarget, ScanRequest};
 use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
-use tauri::App;
+use tauri::{App, Manager};
 
 fn build_app() -> App<MockRuntime> {
     mock_builder()
+        .manage(Mutex::new(AppState::default()))
         .invoke_handler(tauri::generate_handler![
             molt_lib::commands::scan_projects,
             molt_lib::commands::list_caches,
@@ -18,28 +22,48 @@ fn build_app() -> App<MockRuntime> {
 }
 
 #[test]
-fn scan_projects_returns_mock_projects_and_emits_progress() {
+fn scan_projects_finds_fixture_project_and_tracks_allowed_paths() {
+    let home = tempfile::tempdir().unwrap();
+    molt_lib::testkit::fixture_node_project(home.path(), "app", 1).unwrap();
+
     let app = build_app();
+    let state = app.state::<Mutex<AppState>>();
     let request = ScanRequest {
-        roots: vec!["/tmp".into()],
-        max_depth: 4,
+        roots: vec![home.path().to_path_buf()],
+        max_depth: 6,
         ignore: vec![],
     };
 
-    let projects = molt_lib::commands::scan_projects(app.handle().clone(), request)
-        .expect("scan_projects deveria devolver o mock");
+    let projects = tauri::async_runtime::block_on(molt_lib::commands::scan_projects(
+        app.handle().clone(),
+        state,
+        request,
+    ))
+    .expect("scan_projects deveria varrer a fixture");
 
-    assert!(!projects.is_empty());
+    assert_eq!(projects.len(), 1);
+    assert!(!app
+        .state::<Mutex<AppState>>()
+        .lock()
+        .unwrap()
+        .last_scan_paths
+        .is_empty());
 }
 
 #[test]
-fn list_caches_returns_mock_caches() {
-    let caches = molt_lib::commands::list_caches().expect("list_caches deveria devolver o mock");
+fn list_caches_returns_real_catalog() {
+    let app = build_app();
+    let state = app.state::<Mutex<AppState>>();
+
+    let caches = molt_lib::commands::list_caches(state).expect("list_caches deveria funcionar");
     assert!(!caches.is_empty());
 }
 
 #[test]
-fn run_cleanup_echoes_dry_run_flag() {
+fn run_cleanup_rejects_target_outside_allowed_paths() {
+    let app = build_app();
+    let state = app.state::<Mutex<AppState>>();
+
     let request = CleanupRequest {
         targets: vec![CleanupTarget::Cache {
             id: "npm-cache".into(),
@@ -48,13 +72,15 @@ fn run_cleanup_echoes_dry_run_flag() {
         allow_dirty_git: false,
     };
 
-    let result =
-        molt_lib::commands::run_cleanup(request).expect("run_cleanup deveria devolver o mock");
+    // Sem list_caches/scan_projects antes, "npm-cache" não está na lista
+    // permitida: run_cleanup deve recusar o alvo, não lançar um erro.
+    let result = molt_lib::commands::run_cleanup(state, request).expect("run_cleanup é infalível");
     assert!(result.dry_run);
+    assert!(result.freed_bytes == 0);
 }
 
 #[test]
-#[should_panic(expected = "reveal_in_finder ainda não implementado")]
-fn reveal_in_finder_is_a_known_todo() {
-    let _ = molt_lib::commands::reveal_in_finder("/tmp".into());
+fn reveal_in_finder_opens_without_panicking() {
+    let result = molt_lib::commands::reveal_in_finder("/tmp".into());
+    assert!(result.is_ok());
 }

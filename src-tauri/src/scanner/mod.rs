@@ -164,10 +164,20 @@ fn scan_impl(
 }
 
 fn build_project(path: &Path, dedup: &size::SharedDedup, detectors: &Detectors) -> Project {
-    let total_bytes = dedup.disk_usage_bytes(path).unwrap_or(0);
     let kinds = detectors.kind.detect(path);
-    let artifacts = detectors.artifact.detect(path, &kinds);
+    // `detectors.artifact` nunca mede tamanho (ver detectors::mod.rs); cada
+    // artefato é medido aqui com um dedup próprio, ANTES do dedup compartilhado
+    // da varredura ver seus inodes — assim o total_bytes abaixo (que usa o
+    // dedup compartilhado) ainda conta esses blocos por completo, em vez de
+    // achá-los já "vistos" e somar zero.
+    let mut artifacts = detectors.artifact.detect(path, &kinds);
+    for artifact in &mut artifacts {
+        artifact.bytes = size::SharedDedup::new()
+            .disk_usage_bytes(&artifact.path)
+            .unwrap_or(0);
+    }
     let reclaimable_bytes = artifacts.iter().map(|a| a.bytes).sum();
+    let total_bytes = dedup.disk_usage_bytes(path).unwrap_or(0);
     // Detecção de git pode falhar (ex.: repo corrompido); isso não deve abortar
     // a varredura, só deixar o projeto sem informação de git.
     let git = detectors.git.detect(path).unwrap_or(None);
@@ -386,6 +396,66 @@ mod tests {
 
         let last = last.expect("deveria emitir ao menos um progresso");
         assert_eq!(last.projects_found, 1);
+    }
+
+    #[test]
+    fn reclaimable_bytes_reflects_real_artifact_size() {
+        use crate::detectors::{MoltArtifactDetector, MoltGitDetector, MoltKindDetector};
+
+        let home = tempdir().unwrap();
+        let fixture = crate::testkit::fixture_node_project(home.path(), "app", 1).unwrap();
+
+        let detectors = Detectors {
+            kind: &MoltKindDetector,
+            artifact: &MoltArtifactDetector,
+            git: &MoltGitDetector,
+        };
+        let projects = JwalkScanner
+            .scan(
+                &request(vec![home.path().to_path_buf()], 10),
+                &detectors,
+                &mut |_| {},
+            )
+            .unwrap();
+
+        assert_eq!(projects.len(), 1);
+        let project = &projects[0];
+        assert_eq!(project.artifacts.len(), 1);
+        assert_eq!(project.artifacts[0].path, fixture.artifacts[0].path);
+        assert!(project.artifacts[0].bytes > 0);
+        assert_eq!(
+            project.reclaimable_bytes,
+            project.artifacts.iter().map(|a| a.bytes).sum::<u64>()
+        );
+        assert!(project.reclaimable_bytes <= project.total_bytes);
+    }
+
+    #[test]
+    fn fixture_flutter_project_is_detected_as_flutter_with_artifacts() {
+        use crate::detectors::{MoltArtifactDetector, MoltGitDetector, MoltKindDetector};
+        use crate::model::ProjectKind;
+
+        let home = tempdir().unwrap();
+        crate::testkit::fixture_flutter_project(home.path(), "app", 1).unwrap();
+
+        let detectors = Detectors {
+            kind: &MoltKindDetector,
+            artifact: &MoltArtifactDetector,
+            git: &MoltGitDetector,
+        };
+        let projects = JwalkScanner
+            .scan(
+                &request(vec![home.path().to_path_buf()], 10),
+                &detectors,
+                &mut |_| {},
+            )
+            .unwrap();
+
+        assert_eq!(projects.len(), 1);
+        let project = &projects[0];
+        assert!(project.kinds.contains(&ProjectKind::Flutter));
+        assert!(!project.artifacts.is_empty());
+        assert!(project.reclaimable_bytes > 0);
     }
 
     #[test]
