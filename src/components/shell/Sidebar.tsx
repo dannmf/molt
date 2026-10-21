@@ -42,7 +42,7 @@ export function Sidebar() {
           onClick={() => setView(itemView)}
           className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
             view === itemView
-              ? "bg-blue-600 text-white"
+              ? "bg-amber-600 text-white"
               : "text-neutral-600 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/5"
           }`}
         >
@@ -56,7 +56,7 @@ export function Sidebar() {
         onClick={() => setView("onboarding")}
         className={`mt-auto flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors ${
           view === "onboarding"
-            ? "bg-blue-600 text-white"
+            ? "bg-amber-600 text-white"
             : "text-neutral-600 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/5"
         }`}
       >
