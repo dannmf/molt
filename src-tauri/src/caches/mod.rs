@@ -1,13 +1,12 @@
 //! Catálogo de caches de ferramentas de dev (Xcode, Gradle, npm/pnpm/yarn, CocoaPods,
-//! Homebrew) e como limpá-las com segurança. Docker tem seu próprio catálogo em
-//! `docker/`, separado deste.
+//! Homebrew, Docker) e como limpá-las com segurança.
 //!
 //! `list_caches` é a lógica real: percorre um catálogo fixo de locais conhecidos sob
 //! `home` e devolve só o que existe e ocupa espaço de verdade — nunca "todo o
 //! `~/Library/Caches`", só os itens deste catálogo (ver AGENTS.md, "Fora de escopo").
 //!
 //! A maioria das entradas é puramente baseada em filesystem (existe o diretório? qual o
-//! tamanho?). Um punhado depende de um binário externo (`brew`, `pnpm`,
+//! tamanho?). Um punhado depende de um binário externo (`brew`, `docker`, `pnpm`,
 //! `xcrun`) para descobrir o caminho real ou decidir se a entrada aparece — essa parte
 //! fica atrás de `BinaryResolver`/`CommandRunner` (`system.rs`) para os testes poderem
 //! injetar resolvedores/execuções falsas em vez de depender do que está instalado na
@@ -17,6 +16,7 @@ mod system;
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use crate::error::AppError;
 use crate::model::{CacheEntry, CacheRisk, CleanStrategy};
@@ -59,6 +59,7 @@ fn list_caches_with(
     entries.extend(android_avds(home));
     entries.extend(pnpm_store(home, resolver, runner));
     entries.extend(homebrew_cache(resolver, runner));
+    entries.extend(docker_cache(resolver, runner));
 
     entries
 }
@@ -403,11 +404,47 @@ fn homebrew_cache(resolver: &dyn BinaryResolver, runner: &dyn CommandRunner) -> 
     })
 }
 
+/// Espaço reclamável do Docker (imagens, containers parados, volumes órfãos, build
+/// cache). Só aparece se `docker` estiver no `PATH` e `docker system df` responder
+/// dentro do timeout — sem daemon rodando, a entrada simplesmente não aparece em vez de
+/// travar a varredura do catálogo.
+fn docker_cache(resolver: &dyn BinaryResolver, runner: &dyn CommandRunner) -> Option<CacheEntry> {
+    let docker = resolver.resolve("docker")?;
+    let output = runner.run(
+        &docker,
+        &["system", "df", "--format", "{{json .}}"],
+        Duration::from_secs(5),
+    )?;
+
+    let bytes: u64 = output
+        .lines()
+        .filter_map(|line| serde_json::from_str::<serde_json::Value>(line).ok())
+        .filter_map(|row| row.get("Reclaimable")?.as_str().map(str::to_string))
+        .filter_map(|reclaimable| system::parse_decimal_size(&reclaimable))
+        .sum();
+    if bytes == 0 {
+        return None;
+    }
+
+    Some(CacheEntry {
+        id: "docker-cache".to_string(),
+        label: "Docker (imagens, volumes, build cache)".to_string(),
+        tool: "Docker".to_string(),
+        paths: Vec::new(),
+        bytes,
+        risk: CacheRisk::Caution,
+        strategy: CleanStrategy::Command {
+            program: "docker".to_string(),
+            args: vec!["system".to_string(), "prune".to_string()],
+        },
+        description: "Imagens, containers parados e build cache não usados recentemente; limpar pode exigir rebaixar imagens no próximo uso.".to_string(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::model::CleanStrategy as CS;
-    use std::time::Duration;
     use system::fakes::{FakeBinaryResolver, FakeCommandRunner};
     use tempfile::tempdir;
 
@@ -674,6 +711,51 @@ mod tests {
         let entry = entries.iter().find(|e| e.id == "homebrew-cache").unwrap();
         assert!(entry.bytes > 0);
         assert!(matches!(&entry.strategy, CS::Command { program, .. } if program == "brew"));
+    }
+
+    #[test]
+    fn docker_absent_without_binary() {
+        let home = tempdir().unwrap();
+        let entries = list_caches_with(home.path(), &no_resolver(), &no_runner());
+        assert!(!entries.iter().any(|e| e.id == "docker-cache"));
+    }
+
+    #[test]
+    fn docker_absent_when_daemon_does_not_respond() {
+        let home = tempdir().unwrap();
+        // Resolve o binário, mas o runner falso não tem saída programada pra ele
+        // (simula timeout/erro: `run` devolve None).
+        let resolver = no_resolver().with("docker");
+        let entries = list_caches_with(home.path(), &resolver, &no_runner());
+        assert!(!entries.iter().any(|e| e.id == "docker-cache"));
+    }
+
+    #[test]
+    fn docker_sums_reclaimable_bytes_across_rows() {
+        let home = tempdir().unwrap();
+        let resolver = no_resolver().with("docker");
+        let output = concat!(
+            "{\"Type\":\"Images\",\"Reclaimable\":\"1.1GB (34%)\"}\n",
+            "{\"Type\":\"Containers\",\"Reclaimable\":\"80MB (66%)\"}\n",
+            "{\"Type\":\"Build Cache\",\"Reclaimable\":\"0B\"}\n",
+        );
+        let runner = no_runner().with_output("docker", output);
+
+        let entries = list_caches_with(home.path(), &resolver, &runner);
+        let entry = entries.iter().find(|e| e.id == "docker-cache").unwrap();
+        assert_eq!(entry.bytes, 1_100_000_000 + 80_000_000);
+        assert!(matches!(&entry.strategy, CS::Command { program, .. } if program == "docker"));
+    }
+
+    #[test]
+    fn docker_absent_when_all_reclaimable_values_are_zero() {
+        let home = tempdir().unwrap();
+        let resolver = no_resolver().with("docker");
+        let runner =
+            no_runner().with_output("docker", "{\"Type\":\"Images\",\"Reclaimable\":\"0B\"}\n");
+
+        let entries = list_caches_with(home.path(), &resolver, &runner);
+        assert!(!entries.iter().any(|e| e.id == "docker-cache"));
     }
 
     #[test]

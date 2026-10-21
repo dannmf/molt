@@ -8,27 +8,20 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Runtime, State};
 
 use crate::caches;
-use crate::cleanup::{self, CleanupContext, CommandExecutor, SystemCommandExecutor};
+use crate::cleanup::{self, CleanupContext, SystemCommandExecutor};
 use crate::detectors::{MoltArtifactDetector, MoltGitDetector, MoltKindDetector};
-use crate::docker;
 use crate::error::AppError;
-use crate::model::{
-    CacheEntry, CleanStrategy, CleanupRequest, CleanupResult, DockerSummary, Project, ScanProgress,
-    ScanRequest,
-};
+use crate::model::{CacheEntry, CleanupRequest, CleanupResult, Project, ScanProgress, ScanRequest};
 use crate::scanner::{Detectors, JwalkScanner, Scanner};
 
 /// Estado mantido entre comandos: a lista de caminhos permitidos para limpeza
 /// (a única fonte de verdade de `run_cleanup`) vem do último `scan_projects` e
 /// do último `list_caches` — nunca de um caminho construído na hora a partir
-/// de um `CleanupTarget` recebido do frontend. `last_docker_summary` serve o
-/// mesmo papel para `clean_docker_resource`: só se pode limpar um recurso que
-/// apareceu no último `list_docker_resources`.
+/// de um `CleanupTarget` recebido do frontend.
 #[derive(Default)]
 pub struct AppState {
     pub last_scan_paths: Vec<PathBuf>,
     pub last_caches: Vec<CacheEntry>,
-    pub last_docker_summary: Option<DockerSummary>,
 }
 
 fn home_dir() -> Result<PathBuf, AppError> {
@@ -113,51 +106,6 @@ pub fn run_cleanup(
     drop(guard);
 
     Ok(cleanup::run_cleanup(req, &ctx))
-}
-
-/// Lista o catálogo de recursos Docker reclamáveis (imagens penduradas, containers
-/// parados, volumes órfãos, build cache) e os containers em execução, separado do
-/// catálogo de caches de dev. `available = false` quando o binário `docker` não está
-/// no `PATH` ou o daemon não responde.
-#[tauri::command]
-pub fn list_docker_resources(state: State<'_, Mutex<AppState>>) -> Result<DockerSummary, AppError> {
-    let summary = docker::docker_summary();
-    state.lock().unwrap().last_docker_summary = Some(summary.clone());
-    Ok(summary)
-}
-
-/// Limpa um único recurso Docker (`id` vindo do último `list_docker_resources`),
-/// executando o `CleanStrategy::Command` da entrada correspondente.
-#[tauri::command]
-pub fn clean_docker_resource(
-    state: State<'_, Mutex<AppState>>,
-    id: String,
-) -> Result<(), AppError> {
-    let summary = state
-        .lock()
-        .unwrap()
-        .last_docker_summary
-        .clone()
-        .ok_or_else(|| AppError::UnknownCache(id.clone()))?;
-
-    let entry = summary
-        .dangling_images
-        .iter()
-        .chain(summary.stopped_containers.iter())
-        .chain(summary.orphan_volumes.iter())
-        .chain(summary.build_cache.iter())
-        .find(|entry| entry.id == id)
-        .cloned()
-        .ok_or_else(|| AppError::UnknownCache(id.clone()))?;
-
-    match entry.strategy {
-        CleanStrategy::Command { program, args } => SystemCommandExecutor
-            .execute(&program, &args)
-            .map_err(AppError::CommandFailed),
-        CleanStrategy::Trash { .. } => Err(AppError::Other(
-            "estratégia de limpeza inesperada para recurso Docker".to_string(),
-        )),
-    }
 }
 
 /// Abre o Finder com `path` selecionado (`open -R`, sem shell, binário resolvido no PATH).
