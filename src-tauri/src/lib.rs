@@ -15,6 +15,7 @@ use tauri::Manager;
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(Mutex::new(commands::AppState::default()))
         .setup(|app| {
             // Vibrancy nativa da sidebar; falha em silêncio em sistemas sem

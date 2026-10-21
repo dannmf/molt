@@ -1,8 +1,9 @@
 import { useState } from "react";
 
+import { pickFolder } from "../../api/client";
 import { useScan } from "../../hooks/useScan";
 import { DEFAULT_ROOTS, useAppStore } from "../../store/useAppStore";
-import { PlusIcon, ScanIcon, XIcon } from "../icons/Icons";
+import { FolderIcon, PlusIcon, ScanIcon, XIcon } from "../icons/Icons";
 import { ProgressBar } from "../shared/ProgressBar";
 import { ScanningAnimation } from "../shared/ScanningAnimation";
 
@@ -23,6 +24,13 @@ export function OnboardingView() {
     }
     addRoot(trimmed);
     setCustomRoot("");
+  }
+
+  async function handleBrowse() {
+    const picked = await pickFolder();
+    if (picked) {
+      addRoot(picked);
+    }
   }
 
   function handleStart() {
@@ -99,6 +107,14 @@ export function OnboardingView() {
             className="rounded-md border border-black/10 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-black/5 dark:border-white/10 dark:text-neutral-400 dark:hover:bg-white/5"
           >
             Adicionar
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleBrowse()}
+            className="flex items-center gap-1.5 rounded-md border border-black/10 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-black/5 dark:border-white/10 dark:text-neutral-400 dark:hover:bg-white/5"
+          >
+            <FolderIcon className="h-4 w-4" />
+            Procurar
           </button>
         </div>
 
