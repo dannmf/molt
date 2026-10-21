@@ -105,3 +105,9 @@ export interface CleanupResult {
   failed: Array<[string, string]>;
   dryRun: boolean;
 }
+
+export interface CleanupHistoryEntry {
+  timestamp: number;
+  message: string;
+  success: boolean;
+}

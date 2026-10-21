@@ -1,16 +1,19 @@
 import type { AppView } from "../../store/useAppStore";
 import { useAppStore } from "../../store/useAppStore";
-import { BoxIcon, MoonIcon, ScanIcon, SunIcon, TrashIcon } from "../icons/Icons";
+import { BoxIcon, HistoryIcon, MoonIcon, ScanIcon, SunIcon, TrashIcon } from "../icons/Icons";
 
 interface NavItem {
   view: AppView;
   label: string;
   icon: typeof BoxIcon;
+  /** Histórico não depende de uma varredura ter rodado nesta sessão: lê direto do log em disco. */
+  requiresScan?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { view: "projects", label: "Projetos", icon: BoxIcon },
-  { view: "caches", label: "Caches", icon: TrashIcon },
+  { view: "projects", label: "Projetos", icon: BoxIcon, requiresScan: true },
+  { view: "caches", label: "Caches", icon: TrashIcon, requiresScan: true },
+  { view: "history", label: "Histórico", icon: HistoryIcon, requiresScan: false },
 ];
 
 export function Sidebar() {
@@ -34,11 +37,11 @@ export function Sidebar() {
         </button>
       </div>
 
-      {NAV_ITEMS.map(({ view: itemView, label, icon: Icon }) => (
+      {NAV_ITEMS.map(({ view: itemView, label, icon: Icon, requiresScan }) => (
         <button
           key={itemView}
           type="button"
-          disabled={!hasScanned}
+          disabled={requiresScan !== false && !hasScanned}
           onClick={() => setView(itemView)}
           className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
             view === itemView

@@ -39,6 +39,7 @@ pub fn run() {
             commands::scan_projects,
             commands::list_caches,
             commands::run_cleanup,
+            commands::cleanup_history,
             commands::reveal_in_finder,
         ])
         .run(tauri::generate_context!())

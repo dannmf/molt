@@ -5,8 +5,9 @@
 //! o fixture, eles batem entre si: é assim que garantimos `types.ts` 1:1 com `model.rs`.
 
 use molt_lib::model::{
-    Artifact, ArtifactKind, CacheEntry, CacheRisk, CleanStrategy, CleanupRequest, CleanupResult,
-    CleanupTarget, GitInfo, Project, ProjectKind, ScanProgress, ScanRequest,
+    Artifact, ArtifactKind, CacheEntry, CacheRisk, CleanStrategy, CleanupHistoryEntry,
+    CleanupRequest, CleanupResult, CleanupTarget, GitInfo, Project, ProjectKind, ScanProgress,
+    ScanRequest,
 };
 use serde::Serialize;
 use std::path::PathBuf;
@@ -20,6 +21,7 @@ struct ModelSnapshot {
     scan_progress: ScanProgress,
     cleanup_request: CleanupRequest,
     cleanup_result: CleanupResult,
+    cleanup_history_entry: CleanupHistoryEntry,
 }
 
 fn build_snapshot() -> ModelSnapshot {
@@ -141,6 +143,12 @@ fn build_snapshot() -> ModelSnapshot {
         dry_run: false,
     };
 
+    let cleanup_history_entry = CleanupHistoryEntry {
+        timestamp: 1_732_000_050,
+        message: "removido /Users/dev/molt/node_modules (~1200000000 bytes)".to_string(),
+        success: true,
+    };
+
     ModelSnapshot {
         project,
         project_without_git,
@@ -149,6 +157,7 @@ fn build_snapshot() -> ModelSnapshot {
         scan_progress,
         cleanup_request,
         cleanup_result,
+        cleanup_history_entry,
     }
 }
 

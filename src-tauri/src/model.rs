@@ -163,3 +163,14 @@ pub struct CleanupResult {
     pub failed: Vec<(PathBuf, String)>,
     pub dry_run: bool,
 }
+
+/// Uma linha já interpretada do log de limpeza
+/// (`<home>/Library/Logs/Molt/cleanup.log`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CleanupHistoryEntry {
+    /// Timestamp unix (segundos) de quando a ação foi registrada.
+    pub timestamp: i64,
+    pub message: String,
+    pub success: bool,
+}

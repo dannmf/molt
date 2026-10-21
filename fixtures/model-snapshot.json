@@ -134,5 +134,10 @@
       ]
     ],
     "dryRun": false
+  },
+  "cleanup_history_entry": {
+    "timestamp": 1732000050,
+    "message": "removido /Users/dev/molt/node_modules (~1200000000 bytes)",
+    "success": true
   }
 }

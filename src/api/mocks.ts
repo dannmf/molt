@@ -1,4 +1,4 @@
-import type { Artifact, CacheEntry, Project } from "../types";
+import type { Artifact, CacheEntry, CleanupHistoryEntry, Project } from "../types";
 
 const GB = 1024 * 1024 * 1024;
 const MB = 1024 * 1024;
@@ -333,4 +333,23 @@ export const mockCaches: CacheEntry[] = [
     { type: "command", program: "go", args: ["clean", "-cache"] },
     "Cache de build do Go (GOCACHE), recriado no próximo build.",
   ),
+];
+
+export const mockCleanupHistory: CleanupHistoryEntry[] = [
+  {
+    timestamp: NOW,
+    message: "removido /Users/dev/code/orca-dashboard/.next (~161061273 bytes)",
+    success: true,
+  },
+  {
+    timestamp: NOW - 3 * DAY,
+    message:
+      "falha /Users/dev/code/old-project: projeto tem mudanças não commitadas ou commits não enviados; use allowDirtyGit para forçar",
+    success: false,
+  },
+  {
+    timestamp: NOW - 5 * DAY,
+    message: "removido cache 'npm-cache' (1 caminho(s), ~1400000000 bytes)",
+    success: true,
+  },
 ];
