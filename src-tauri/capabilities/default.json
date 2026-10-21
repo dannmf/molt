@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Permissões padrão da janela principal do Molt",
   "windows": ["main"],
-  "permissions": ["core:default", "core:event:default"]
+  "permissions": ["core:default", "core:event:default", "dialog:allow-open"]
 }

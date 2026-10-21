@@ -7,6 +7,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-dialog";
 
 import type { CacheEntry, CleanupRequest, CleanupResult, Project, ScanProgress, ScanRequest } from "../types";
 import { mockCaches, mockProjects } from "./mocks";
@@ -31,6 +32,13 @@ export async function runCleanup(req: CleanupRequest): Promise<CleanupResult> {
 export async function revealInFinder(path: string): Promise<void> {
   if (useMocks) return undefined;
   await invoke("reveal_in_finder", { path });
+}
+
+/** Abre o explorador de arquivos nativo para escolher uma pasta raiz de varredura. */
+export async function pickFolder(): Promise<string | null> {
+  if (useMocks) return null;
+  const selected = await open({ directory: true, multiple: false });
+  return typeof selected === "string" ? selected : null;
 }
 
 /**
