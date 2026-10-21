@@ -99,7 +99,7 @@ export function OnboardingView() {
             onChange={(event) => setCustomRoot(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && handleAddCustom()}
             placeholder="/Users/voce/outra-pasta"
-            className="flex-1 rounded-md border border-black/10 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-500 dark:border-white/10 dark:bg-neutral-900"
+            className="flex-1 rounded-md border border-black/10 bg-white px-3 py-1.5 text-sm outline-none focus:border-amber-500 dark:border-white/10 dark:bg-neutral-900"
           />
           <button
             type="button"
@@ -122,7 +122,7 @@ export function OnboardingView() {
           type="button"
           onClick={handleStart}
           disabled={roots.length === 0 || isScanning}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50 hover:bg-blue-700"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50 hover:bg-amber-700"
         >
           <ScanIcon className="h-4 w-4" />
           {isScanning ? "Varrendo..." : "Começar varredura"}
