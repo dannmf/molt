@@ -9,8 +9,16 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 
-import type { CacheEntry, CleanupRequest, CleanupResult, Project, ScanProgress, ScanRequest } from "../types";
-import { mockCaches, mockProjects } from "./mocks";
+import type {
+  CacheEntry,
+  CleanupRequest,
+  CleanupResult,
+  DockerSummary,
+  Project,
+  ScanProgress,
+  ScanRequest,
+} from "../types";
+import { mockCaches, mockDockerSummary, mockProjects } from "./mocks";
 
 const useMocks = import.meta.env.VITE_USE_MOCKS === "1";
 
@@ -27,6 +35,16 @@ export async function listCaches(): Promise<CacheEntry[]> {
 export async function runCleanup(req: CleanupRequest): Promise<CleanupResult> {
   if (useMocks) return { freedBytes: 0, removed: [], failed: [], dryRun: req.dryRun };
   return invoke<CleanupResult>("run_cleanup", { req });
+}
+
+export async function listDockerResources(): Promise<DockerSummary> {
+  if (useMocks) return mockDockerSummary;
+  return invoke<DockerSummary>("list_docker_resources");
+}
+
+export async function cleanDockerResource(id: string): Promise<void> {
+  if (useMocks) return undefined;
+  await invoke("clean_docker_resource", { id });
 }
 
 export async function revealInFinder(path: string): Promise<void> {

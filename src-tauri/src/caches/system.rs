@@ -91,28 +91,6 @@ impl CommandRunner for TimeoutCommandRunner {
     }
 }
 
-/// Converte um tamanho formatado em base decimal (`"7.76GB"`, `"512MB"`,
-/// `"0B"` — o formato usado pelo Docker) em bytes. Ignora um sufixo de
-/// porcentagem entre parênteses (`"1.1GB (34%)"`).
-pub fn parse_decimal_size(input: &str) -> Option<u64> {
-    let token = input.split_whitespace().next()?;
-    let unit_start = token.find(|c: char| c.is_alphabetic())?;
-    let (number, unit) = token.split_at(unit_start);
-    let value: f64 = number.parse().ok()?;
-    if !value.is_finite() || value < 0.0 {
-        return None;
-    }
-    let multiplier: f64 = match unit.to_ascii_uppercase().as_str() {
-        "B" => 1.0,
-        "KB" => 1_000.0,
-        "MB" => 1_000_000.0,
-        "GB" => 1_000_000_000.0,
-        "TB" => 1_000_000_000_000.0,
-        _ => return None,
-    };
-    Some((value * multiplier) as u64)
-}
-
 #[cfg(test)]
 pub mod fakes {
     use super::*;
@@ -172,24 +150,6 @@ pub mod fakes {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn parses_plain_decimal_sizes() {
-        assert_eq!(parse_decimal_size("0B"), Some(0));
-        assert_eq!(parse_decimal_size("512MB"), Some(512_000_000));
-        assert_eq!(parse_decimal_size("1GB"), Some(1_000_000_000));
-    }
-
-    #[test]
-    fn ignores_percentage_suffix() {
-        assert_eq!(parse_decimal_size("1.1GB (34%)"), Some(1_100_000_000));
-    }
-
-    #[test]
-    fn rejects_garbage() {
-        assert_eq!(parse_decimal_size("not-a-size"), None);
-        assert_eq!(parse_decimal_size(""), None);
-    }
 
     #[test]
     fn real_resolver_finds_a_binary_that_surely_exists() {

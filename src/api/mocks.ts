@@ -1,4 +1,4 @@
-import type { Artifact, CacheEntry, Project } from "../types";
+import type { Artifact, CacheEntry, DockerSummary, Project } from "../types";
 
 const GB = 1024 * 1024 * 1024;
 const MB = 1024 * 1024;
@@ -284,16 +284,6 @@ export const mockCaches: CacheEntry[] = [
     "Pacotes e bottles baixados pelo Homebrew.",
   ),
   cache(
-    "docker-images",
-    "Imagens Docker não usadas",
-    "docker",
-    "/Users/dev/Library/Containers/com.docker.docker/Data/vms/0",
-    6.1 * GB,
-    "caution",
-    { type: "command", program: "docker", args: ["system", "prune", "-f"] },
-    "Imagens, containers e volumes não usados. Remove imagens que ainda não foram usadas recentemente.",
-  ),
-  cache(
     "dart-pub-cache",
     "Pub cache (Dart/Flutter)",
     "flutter",
@@ -304,3 +294,65 @@ export const mockCaches: CacheEntry[] = [
     "Pacotes Dart/Flutter baixados, recriados no próximo pub get.",
   ),
 ];
+
+function dockerEntry(
+  id: string,
+  label: string,
+  bytes: number,
+  risk: CacheEntry["risk"],
+  strategy: CacheEntry["strategy"],
+  description: string,
+): CacheEntry {
+  return { id, label, tool: "Docker", paths: [], bytes, risk, strategy, description };
+}
+
+export const mockDockerSummary: DockerSummary = {
+  available: true,
+  danglingImages: [
+    dockerEntry(
+      "docker-image-a1b2c3",
+      "<none>:<none>",
+      0.5 * GB,
+      "rebuildable",
+      { type: "command", program: "docker", args: ["rmi", "a1b2c3"] },
+      "Imagem sem tag, não referenciada por nenhum container",
+    ),
+    dockerEntry(
+      "docker-image-d4e5f6",
+      "<none>:<none>",
+      1.2 * GB,
+      "rebuildable",
+      { type: "command", program: "docker", args: ["rmi", "d4e5f6"] },
+      "Imagem sem tag, não referenciada por nenhum container",
+    ),
+  ],
+  stoppedContainers: [
+    dockerEntry(
+      "docker-container-7f8a9b",
+      "old-job (busybox)",
+      12 * MB,
+      "caution",
+      { type: "command", program: "docker", args: ["rm", "7f8a9b"] },
+      "Container parado — Exited (0) 3 days ago",
+    ),
+  ],
+  runningContainers: [{ id: "c0ffee123456", name: "web", image: "nginx", status: "Up 2 hours" }],
+  orphanVolumes: [
+    dockerEntry(
+      "docker-volume-orphan-data",
+      "orphan-data",
+      0,
+      "caution",
+      { type: "command", program: "docker", args: ["volume", "rm", "orphan-data"] },
+      "Volume não referenciado por nenhum container",
+    ),
+  ],
+  buildCache: dockerEntry(
+    "docker-build-cache",
+    "Build cache do Docker",
+    2.3 * GB,
+    "safe",
+    { type: "command", program: "docker", args: ["builder", "prune", "-f"] },
+    "Camadas intermediárias de build, reconstruídas automaticamente quando necessário",
+  ),
+};
