@@ -177,3 +177,72 @@ próprio comando, e às vezes (Docker) nem existe um path único no host.
 
 Workaround local: nenhum — quem consumir `CacheEntry.paths` na UI deve tratar uma lista
 vazia como "sem preview de caminho disponível", não como erro.
+
+## 2026-10-21 — feat/cleanup — `CleanupContext.caches: Vec<CacheEntry>` além dos 3 campos pedidos
+
+O que: a tarefa descreveu `CleanupContext` como carregando `home`, `allowed_paths` e um
+executor de comandos injetável. `CleanupTarget::Cache { id }` só carrega um `id`, sem a
+`CleanStrategy` associada — não tem como saber se é `Trash { paths }` ou `Command { program,
+args }` sem consultar o catálogo. `CleanupContext` ganhou um quarto campo,
+`caches: Vec<CacheEntry>`, com o mesmo catálogo que `list_caches` devolve, usado só para
+resolver `id` -> `CleanStrategy`.
+
+Por quê: sem isso, `run_cleanup` não tem como processar `CleanupTarget::Cache` de forma
+alguma.
+
+Workaround local: nenhum — é um campo novo direto em `CleanupContext`, que não é um tipo de
+`model.rs` (é interno a `cleanup/mod.rs`), então não precisava de aprovação prévia.
+Registrando aqui para quem for integrar `commands::run_cleanup` de verdade: o `CleanupContext`
+precisa ser construído com o resultado de `list_caches`, não só com `allowed_paths`.
+
+## 2026-10-21 — feat/cleanup — duplicação local de medição de disco (`SizeDedup`) e execução de comandos (`SystemCommandExecutor`)
+
+O que: `cleanup/mod.rs` define sua própria `SizeDedup` (st_blocks*512, dedup de hardlink por
+`(dev, ino)`, sem seguir symlink) e seu próprio `resolve_binary`/`is_executable_file`/
+`run_with_timeout` (resolução no PATH sem shell, com timeout), em vez de reaproveitar
+`scanner::size::SharedDedup` e `caches::system::{BinaryResolver, CommandRunner,
+PathBinaryResolver, TimeoutCommandRunner}`.
+
+Por quê: `scanner::size` é um módulo privado de `scanner/mod.rs` (`mod size;`, sem `pub`) e
+`caches::system` é privado a `caches/mod.rs` (`mod system;`, sem `pub`) — nenhum dos dois é
+visível fora da própria árvore do módulo. Mesma situação já registrada por `feat/caches` ao
+duplicar a lógica de `testkit::disk_usage_bytes` (que é `cfg(test)`-only).
+
+Workaround local: lógica replicada localmente em `cleanup/mod.rs` (`SizeDedup`,
+`resolve_binary`, `is_executable_file`, `run_with_timeout`). Se isso importar (ex.: um bug na
+regra de medição precisar ser corrigido em 3 lugares), considerar extrair `scanner::size` e
+`caches::system` (ou só as partes relevantes) para um módulo público compartilhado — fora do
+escopo deste worktree, já que exigiria mudar a posse de pastas de `scanner`/`caches`.
+
+## 2026-10-21 — feat/cleanup — `CleanupResult.failed` usa um `PathBuf` sintético `cache:{id}` para falhas de `CleanupTarget::Cache`
+
+O que: `CleanupResult.failed: Vec<(PathBuf, String)>` só tem espaço para um `PathBuf`, mas
+`CleanupTarget::Cache { id }` não tem um path natural (a entrada pode ter `paths: vec![]`,
+como `docker-cache` — ver entrada de `feat/caches` acima). Falhas de alvos `Cache` entram em
+`failed` com `PathBuf::from(format!("cache:{id}"))` no lugar do path.
+
+Por quê: `CleanupResult` é tipo de `model.rs`, fora de escopo para mudar aqui (ex.: virar
+`Vec<(CleanupTarget, String)>` resolveria isso de forma mais limpa, mas é mudança de
+contrato).
+
+Workaround local: marcador sintético `cache:{id}`. Quem consumir `CleanupResult.failed` na UI
+precisa tratar esse prefixo como "isto não é um path de disco, é um id de cache" — não dá pra
+usar `reveal_in_finder` nele, por exemplo. Se isso importar para a UI, vale propor a mudança
+de `model.rs` para `failed: Vec<(CleanupTarget, String)>`.
+
+## 2026-10-21 — feat/cleanup — trait `CleanupExecutor`/`StubCleanupExecutor` antigos removidos (código morto, nunca ligado a `commands.rs`)
+
+O que: o stub anterior de `cleanup/mod.rs` definia um trait `CleanupExecutor` com um
+`StubCleanupExecutor`, mas `commands::run_cleanup` nunca os referenciava — é um `Ok(CleanupResult
+{ freed_bytes: 0, .. })` hardcoded, sem chamar nada de `cleanup::`. Esse trait/stub foi
+removido por completo e substituído pela assinatura pedida nesta tarefa:
+`run_cleanup(request: CleanupRequest, ctx: &CleanupContext) -> CleanupResult`.
+
+Por quê: diferente do precedente de `feat/caches` (que manteve o trait `CacheCatalog` já
+ativo), aqui o trait antigo era scaffolding morta, sem nenhum ponto de integração real para
+preservar.
+
+Workaround local: nenhum — `commands::run_cleanup` continua precisando de integração (fora
+do escopo deste worktree, é trabalho de bootstrap/integração): construir um
+`CleanupContext` real a partir dos resultados de `scan_projects`/`list_caches` e chamar
+`cleanup::run_cleanup` em vez de devolver o mock atual.
