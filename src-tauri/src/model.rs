@@ -122,6 +122,9 @@ pub struct ScanRequest {
     pub roots: Vec<PathBuf>,
     pub max_depth: u32,
     pub ignore: Vec<String>,
+    /// Caminhos de projeto a nunca registrar (exclusão persistente escolhida pelo
+    /// usuário). Um caminho aqui também para a varredura de descer para dentro dele.
+    pub excluded_paths: Vec<PathBuf>,
 }
 
 /// Evento de progresso emitido durante uma varredura (canal `scan://progress`).

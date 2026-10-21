@@ -74,6 +74,8 @@ fn scan_impl(
             .chain(request.ignore.iter().cloned())
             .collect(),
     );
+    let excluded_set: Arc<std::collections::HashSet<PathBuf>> =
+        Arc::new(request.excluded_paths.iter().cloned().collect());
     let candidates: Arc<Mutex<Vec<PathBuf>>> = Arc::new(Mutex::new(Vec::new()));
 
     let mut scanned_dirs = 0u64;
@@ -82,12 +84,20 @@ fn scan_impl(
     for root in &request.roots {
         let candidates_for_walker = Arc::clone(&candidates);
         let ignore_set = Arc::clone(&ignore_set);
+        let excluded_set = Arc::clone(&excluded_set);
 
         let walker = WalkDir::new(root)
             .follow_links(false)
             .skip_hidden(false)
             .max_depth(request.max_depth as usize)
             .process_read_dir(move |_depth, dir_path, _read_dir_state, children| {
+                // Caminho excluído pelo usuário: nem registra como projeto, nem
+                // desce para dentro dele (nenhum membro de monorepo escondido
+                // ali deveria aparecer de novo).
+                if excluded_set.contains(dir_path) {
+                    children.clear();
+                    return;
+                }
                 // Se este diretório já tem um marcador de projeto entre seus
                 // filhos diretos, registra-o e para de descer (exceto a
                 // resolução de monorepo, que roda depois, direto no disco).
@@ -258,6 +268,7 @@ mod tests {
             roots,
             max_depth,
             ignore: Vec::new(),
+            excluded_paths: Vec::new(),
         }
     }
 
@@ -363,6 +374,41 @@ mod tests {
 
         let projects = result.unwrap();
         assert_eq!(projects.len(), 1);
+    }
+
+    #[test]
+    fn excluded_project_is_not_registered() {
+        let home = tempdir().unwrap();
+        crate::testkit::fixture_node_project(home.path(), "keep", 1).unwrap();
+        let excluded_fixture =
+            crate::testkit::fixture_node_project(home.path(), "ignored", 1).unwrap();
+
+        let mut req = request(vec![home.path().to_path_buf()], 10);
+        req.excluded_paths = vec![excluded_fixture.root.clone()];
+
+        let projects = scan(&req);
+        assert_eq!(projects.len(), 1);
+        assert!(!projects.iter().any(|p| p.path == excluded_fixture.root));
+    }
+
+    #[test]
+    fn excluding_a_monorepo_root_also_hides_its_members() {
+        let home = tempdir().unwrap();
+        let root = home.path().join("monorepo");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(
+            root.join("package.json"),
+            r#"{"name":"root","workspaces":["packages/*"]}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(root.join("packages/a")).unwrap();
+        fs::write(root.join("packages/a/package.json"), "{}").unwrap();
+
+        let mut req = request(vec![home.path().to_path_buf()], 10);
+        req.excluded_paths = vec![root.clone()];
+
+        let projects = scan(&req);
+        assert!(projects.is_empty());
     }
 
     #[test]

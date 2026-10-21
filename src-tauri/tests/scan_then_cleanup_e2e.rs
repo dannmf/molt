@@ -28,6 +28,7 @@ fn scan_then_dry_run_cleanup_frees_exactly_the_scanned_artifact_bytes() {
         roots: vec![home.path().to_path_buf()],
         max_depth: 6,
         ignore: vec![],
+        excluded_paths: vec![],
     };
     let projects = JwalkScanner
         .scan(&request, &detectors, &mut |_| {})

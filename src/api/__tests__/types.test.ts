@@ -87,6 +87,7 @@ const snapshot: ModelSnapshot = {
     roots: ["/Users/dev"],
     maxDepth: 6,
     ignore: ["node_modules", ".git"],
+    excludedPaths: ["/Users/dev/old-project"],
   },
   scan_progress: {
     scannedDirs: 4_200,

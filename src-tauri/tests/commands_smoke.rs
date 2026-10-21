@@ -32,6 +32,7 @@ fn scan_projects_finds_fixture_project_and_tracks_allowed_paths() {
         roots: vec![home.path().to_path_buf()],
         max_depth: 6,
         ignore: vec![],
+        excluded_paths: vec![],
     };
 
     let projects = tauri::async_runtime::block_on(molt_lib::commands::scan_projects(

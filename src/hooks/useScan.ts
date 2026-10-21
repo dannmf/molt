@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 
 import { onScanProgress, scanProjects } from "../api/client";
+import { useAppStore } from "../store/useAppStore";
 import type { Project } from "../types";
 import { PROJECTS_QUERY_KEY } from "./useProjectsQuery";
 
@@ -19,12 +20,13 @@ function approximateProgress(scannedDirs: number): number {
 
 export function useScan() {
   const queryClient = useQueryClient();
+  const excludedPaths = useAppStore((state) => state.excludedPaths);
   const [progressPct, setProgressPct] = useState(0);
   const unlistenRef = useRef<(() => void) | undefined>(undefined);
 
   const mutation = useMutation({
     mutationFn: (roots: string[]) =>
-      scanProjects({ roots, maxDepth: 6, ignore: ["node_modules", ".git", "target"] }),
+      scanProjects({ roots, maxDepth: 6, ignore: ["node_modules", ".git", "target"], excludedPaths }),
     onMutate: () => {
       setProgressPct(0);
       unlistenRef.current = onScanProgress((progress) => {
