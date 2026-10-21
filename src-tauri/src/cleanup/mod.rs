@@ -17,7 +17,9 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use crate::detectors::{GitDetector, MoltGitDetector};
-use crate::model::{CacheEntry, CleanStrategy, CleanupRequest, CleanupResult, CleanupTarget};
+use crate::model::{
+    CacheEntry, CleanStrategy, CleanupHistoryEntry, CleanupRequest, CleanupResult, CleanupTarget,
+};
 
 /// Caminhos fixos que nunca podem ser alvo de limpeza, além do próprio HOME e
 /// de qualquer ancestral dele (ver `is_protected`).
@@ -414,6 +416,34 @@ fn log_append(ctx: &CleanupContext, line: &str) {
             .unwrap_or(0);
         let _ = writeln!(file, "{ts} {line}");
     }
+}
+
+/// Lê e interpreta `<home>/Library/Logs/Molt/cleanup.log`, mais recente
+/// primeiro. Um log ainda inexistente (nenhuma limpeza rodou) devolve uma
+/// lista vazia, não um erro. Linhas sem o timestamp numérico esperado no
+/// início (ex.: um arquivo editado à mão) são ignoradas silenciosamente: o
+/// log é só observabilidade, nunca uma fonte de verdade.
+pub fn read_history(home: &Path) -> Vec<CleanupHistoryEntry> {
+    let log_path = home.join("Library/Logs/Molt/cleanup.log");
+    let content = match fs::read_to_string(&log_path) {
+        Ok(content) => content,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut entries: Vec<CleanupHistoryEntry> = content
+        .lines()
+        .filter_map(|line| {
+            let (ts, message) = line.split_once(' ')?;
+            let timestamp: i64 = ts.parse().ok()?;
+            Some(CleanupHistoryEntry {
+                timestamp,
+                success: !message.starts_with("falha "),
+                message: message.to_string(),
+            })
+        })
+        .collect();
+    entries.reverse();
+    entries
 }
 
 #[cfg(test)]
@@ -914,5 +944,36 @@ mod tests {
 
         assert!(after_second.starts_with(&after_first));
         assert!(after_second.lines().count() > lines_after_first);
+    }
+
+    #[test]
+    fn read_history_is_empty_when_log_does_not_exist() {
+        let home = tempdir().unwrap();
+        assert!(read_history(home.path()).is_empty());
+    }
+
+    #[test]
+    fn read_history_reports_most_recent_first_with_success_flag() {
+        let home = tempdir().unwrap();
+        let target_a = home.path().join("node_modules");
+        sparse_file(&target_a.join("f"), 4096);
+        let target_b = home.path().join("old-project");
+        sparse_file(&target_b.join("f"), 4096);
+
+        let executor = FakeExecutor::default();
+
+        let c1 = ctx(home.path(), vec![target_a.clone()], &executor);
+        run_cleanup(artifact_request(&target_a, false), &c1);
+
+        // Alvo não permitido: gera uma entrada de falha no log.
+        let c2 = ctx(home.path(), vec![], &executor);
+        run_cleanup(artifact_request(&target_b, false), &c2);
+
+        let history = read_history(home.path());
+        assert_eq!(history.len(), 2);
+        assert!(!history[0].success);
+        assert!(history[0].message.starts_with("falha "));
+        assert!(history[1].success);
+        assert!(history[1].message.starts_with("removido "));
     }
 }

@@ -11,7 +11,10 @@ use crate::caches;
 use crate::cleanup::{self, CleanupContext, SystemCommandExecutor};
 use crate::detectors::{MoltArtifactDetector, MoltGitDetector, MoltKindDetector};
 use crate::error::AppError;
-use crate::model::{CacheEntry, CleanupRequest, CleanupResult, Project, ScanProgress, ScanRequest};
+use crate::model::{
+    CacheEntry, CleanupHistoryEntry, CleanupRequest, CleanupResult, Project, ScanProgress,
+    ScanRequest,
+};
 use crate::scanner::{Detectors, JwalkScanner, Scanner};
 
 /// Estado mantido entre comandos: a lista de caminhos permitidos para limpeza
@@ -106,6 +109,14 @@ pub fn run_cleanup(
     drop(guard);
 
     Ok(cleanup::run_cleanup(req, &ctx))
+}
+
+/// Lê o histórico de limpezas já realizadas, mais recente primeiro, a partir
+/// do log em `<home>/Library/Logs/Molt/cleanup.log`.
+#[tauri::command]
+pub fn cleanup_history() -> Result<Vec<CleanupHistoryEntry>, AppError> {
+    let home = home_dir()?;
+    Ok(cleanup::read_history(&home))
 }
 
 /// Abre o Finder com `path` selecionado (`open -R`, sem shell, binário resolvido no PATH).

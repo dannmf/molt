@@ -7,7 +7,7 @@ import { EMPTY_FILTERS } from "../lib/projects";
 import type { Theme } from "../lib/theme";
 import { resolveInitialTheme, THEME_STORAGE_KEY, toggleTheme as flipTheme } from "../lib/theme";
 
-export type AppView = "onboarding" | "projects" | "caches";
+export type AppView = "onboarding" | "projects" | "caches" | "history";
 
 export const DEFAULT_ROOTS = ["~/Developer", "~/Projects", "~/Documents"];
 

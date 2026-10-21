@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import type { CacheEntry, CleanupRequest, CleanupResult, Project, ScanProgress, ScanRequest } from "../../types";
+import type {
+  CacheEntry,
+  CleanupHistoryEntry,
+  CleanupRequest,
+  CleanupResult,
+  Project,
+  ScanProgress,
+  ScanRequest,
+} from "../../types";
 import fixture from "../../../fixtures/model-snapshot.json";
 
 /**
@@ -17,6 +25,7 @@ interface ModelSnapshot {
   scan_progress: ScanProgress;
   cleanup_request: CleanupRequest;
   cleanup_result: CleanupResult;
+  cleanup_history_entry: CleanupHistoryEntry;
 }
 
 const snapshot: ModelSnapshot = {
@@ -108,6 +117,11 @@ const snapshot: ModelSnapshot = {
     removed: ["/Users/dev/molt/node_modules"],
     failed: [["/Users/dev/old-project", "projeto com alterações não commitadas"]],
     dryRun: false,
+  },
+  cleanup_history_entry: {
+    timestamp: 1_732_000_050,
+    message: "removido /Users/dev/molt/node_modules (~1200000000 bytes)",
+    success: true,
   },
 };
 
