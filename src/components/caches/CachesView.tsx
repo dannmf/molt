@@ -4,7 +4,7 @@ import { useCachesQuery, useRemoveCacheEntry } from "../../hooks/useCachesQuery"
 import { planForCache, type CleanupPlan } from "../../lib/cleanupPlan";
 import type { CacheEntry } from "../../types";
 import { ConfirmCleanupModal } from "../shared/ConfirmCleanupModal";
-import { Spinner } from "../shared/Spinner";
+import { ScanningAnimation } from "../shared/ScanningAnimation";
 import { CacheCard } from "./CacheCard";
 
 function groupByTool(caches: CacheEntry[]): Map<string, CacheEntry[]> {
@@ -34,7 +34,7 @@ export function CachesView() {
     <div className="h-full overflow-y-auto px-6 py-6">
       {isPending && (
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-sm text-neutral-500 dark:text-neutral-400">
-          <Spinner className="h-6 w-6" />
+          <ScanningAnimation />
           Verificando caches...
         </div>
       )}
