@@ -25,7 +25,9 @@ export function FolderIcon({ className = base }: IconProps) {
 export function BroomIcon({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className}>
-      <path d="M20 4 10 14M6 18l-2 3M9 15l-5 2 2-5 6-6 3 3-6 6Z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M19 3 11 11" strokeLinecap="round" />
+      <path d="M8.5 9.5 14 11.5" strokeLinecap="round" />
+      <path d="M11 11 4.5 19.5M11 11 7.5 21M11 11 10.5 21.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -93,6 +95,23 @@ export function ScanIcon({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className}>
       <path d="M4 7V5a1 1 0 0 1 1-1h2M4 17v2a1 1 0 0 0 1 1h2M20 7V5a1 1 0 0 0-1-1h-2M20 17v2a1 1 0 0 1-1 1h-2M4 12h16" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function SunIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function MoonIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className}>
+      <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

@@ -66,7 +66,7 @@ export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject }: Pr
           <SortableHeader label="Recuperável" sortKey="reclaimableBytes" activeKey={sortKey} direction={sortDirection} onSort={setSort} align="right" />
           <th className="px-3 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400">Git</th>
           <SortableHeader label="Última modificação" sortKey="lastModifiedAt" activeKey={sortKey} direction={sortDirection} onSort={setSort} />
-          <th className="px-3 py-2 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400">Ações</th>
+          <th className="px-3 py-2 text-center text-xs font-medium text-neutral-500 dark:text-neutral-400">Ações</th>
         </tr>
       </thead>
       <tbody>
@@ -115,7 +115,7 @@ export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject }: Pr
             </td>
             <td className="px-3 py-2 text-neutral-600 dark:text-neutral-400">{formatRelativeDate(project.lastModifiedAt)}</td>
             <td className="px-3 py-2">
-              <div className="flex items-center justify-end gap-1">
+              <div className="flex items-center justify-center gap-1">
                 <button
                   type="button"
                   onClick={() => onCleanArtifacts(project)}

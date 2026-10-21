@@ -4,6 +4,7 @@ import { useScan } from "../../hooks/useScan";
 import { DEFAULT_ROOTS, useAppStore } from "../../store/useAppStore";
 import { PlusIcon, ScanIcon, XIcon } from "../icons/Icons";
 import { ProgressBar } from "../shared/ProgressBar";
+import { ScanningAnimation } from "../shared/ScanningAnimation";
 
 export function OnboardingView() {
   const roots = useAppStore((state) => state.roots);
@@ -113,6 +114,7 @@ export function OnboardingView() {
 
         {isScanning && (
           <div className="mt-3">
+            <ScanningAnimation />
             <ProgressBar percent={progressPct} />
           </div>
         )}
