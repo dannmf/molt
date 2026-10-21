@@ -1,12 +1,12 @@
 //! Catálogo de caches de ferramentas de dev (Xcode, Gradle, npm/pnpm/yarn, CocoaPods,
-//! Homebrew, Docker) e como limpá-las com segurança.
+//! Cargo, Composer, Go, Homebrew, Docker) e como limpá-las com segurança.
 //!
 //! `list_caches` é a lógica real: percorre um catálogo fixo de locais conhecidos sob
 //! `home` e devolve só o que existe e ocupa espaço de verdade — nunca "todo o
 //! `~/Library/Caches`", só os itens deste catálogo (ver AGENTS.md, "Fora de escopo").
 //!
 //! A maioria das entradas é puramente baseada em filesystem (existe o diretório? qual o
-//! tamanho?). Um punhado depende de um binário externo (`brew`, `docker`, `pnpm`,
+//! tamanho?). Um punhado depende de um binário externo (`brew`, `docker`, `pnpm`, `go`,
 //! `xcrun`) para descobrir o caminho real ou decidir se a entrada aparece — essa parte
 //! fica atrás de `BinaryResolver`/`CommandRunner` (`system.rs`) para os testes poderem
 //! injetar resolvedores/execuções falsas em vez de depender do que está instalado na
@@ -58,6 +58,7 @@ fn list_caches_with(
     entries.extend(unavailable_simulators(home, resolver));
     entries.extend(android_avds(home));
     entries.extend(pnpm_store(home, resolver, runner));
+    entries.extend(go_build_cache(home, resolver, runner));
     entries.extend(homebrew_cache(resolver, runner));
     entries.extend(docker_cache(resolver, runner));
 
@@ -198,6 +199,22 @@ const SIMPLE_CACHE_RULES: &[SimpleCacheRule] = &[
         relative_paths: &["Library/Caches/CocoaPods"],
         risk: CacheRisk::Rebuildable,
         description: "Specs e pods baixados pelo CocoaPods, recriados no próximo pod install.",
+    },
+    SimpleCacheRule {
+        id: "cargo-registry",
+        label: "Cargo registry",
+        tool: "Cargo",
+        relative_paths: &[".cargo/registry"],
+        risk: CacheRisk::Rebuildable,
+        description: "Pacotes Rust e seus índices baixados pelo Cargo, recriados no próximo build.",
+    },
+    SimpleCacheRule {
+        id: "composer-cache",
+        label: "Composer cache",
+        tool: "Composer",
+        relative_paths: &["Library/Caches/composer"],
+        risk: CacheRisk::Rebuildable,
+        description: "Pacotes PHP baixados pelo Composer, recriados no próximo install.",
     },
 ];
 
@@ -372,6 +389,60 @@ fn pnpm_store(
         strategy,
         description: "Store de conteúdo endereçável do pnpm, recriado no próximo install."
             .to_string(),
+    })
+}
+
+/// Build cache do Go (`GOCACHE`). Se o binário existir, usa `go env GOCACHE` para achar
+/// o caminho real (pode ter sido redefinido via variável de ambiente) e prefere
+/// `go clean -cache` como estratégia de limpeza. Sem o binário, cai no caminho padrão do
+/// macOS e usa Trash.
+fn go_build_cache(
+    home: &Path,
+    resolver: &dyn BinaryResolver,
+    runner: &dyn CommandRunner,
+) -> Option<CacheEntry> {
+    let default_path = home.join("Library/Caches/go-build");
+
+    let (path, strategy) = match resolver.resolve("go") {
+        Some(go) => {
+            let discovered = runner
+                .run(&go, &["env", "GOCACHE"], system::DEFAULT_TIMEOUT)
+                .map(|output| PathBuf::from(output.trim()))
+                .filter(|path| !path.as_os_str().is_empty())
+                .unwrap_or_else(|| default_path.clone());
+            (
+                discovered,
+                CleanStrategy::Command {
+                    program: "go".to_string(),
+                    args: vec!["clean".to_string(), "-cache".to_string()],
+                },
+            )
+        }
+        None => (
+            default_path.clone(),
+            CleanStrategy::Trash {
+                paths: vec![default_path.clone()],
+            },
+        ),
+    };
+
+    if !path.is_dir() {
+        return None;
+    }
+    let bytes = dir_bytes(&path);
+    if bytes == 0 {
+        return None;
+    }
+
+    Some(CacheEntry {
+        id: "go-build-cache".to_string(),
+        label: "Go build cache".to_string(),
+        tool: "Go".to_string(),
+        paths: vec![path],
+        bytes,
+        risk: CacheRisk::Rebuildable,
+        strategy,
+        description: "Cache de build do Go (GOCACHE), recriado no próximo build.".to_string(),
     })
 }
 
@@ -689,6 +760,68 @@ mod tests {
         let home = tempdir().unwrap();
         let entries = list_caches_with(home.path(), &no_resolver(), &no_runner());
         assert!(!entries.iter().any(|e| e.id == "pnpm-store"));
+    }
+
+    #[test]
+    fn cargo_registry_appears_from_simple_rule() {
+        let home = tempdir().unwrap();
+        sparse_file(
+            &home.path().join(".cargo/registry/cache/x.crate"),
+            1024 * 1024,
+        );
+
+        let entries = list_caches_with(home.path(), &no_resolver(), &no_runner());
+        let entry = entries.iter().find(|e| e.id == "cargo-registry").unwrap();
+        assert_eq!(entry.risk, CacheRisk::Rebuildable);
+        assert!(matches!(&entry.strategy, CS::Trash { .. }));
+    }
+
+    #[test]
+    fn composer_cache_appears_from_simple_rule() {
+        let home = tempdir().unwrap();
+        sparse_file(
+            &home.path().join("Library/Caches/composer/files/x.bin"),
+            1024 * 1024,
+        );
+
+        let entries = list_caches_with(home.path(), &no_resolver(), &no_runner());
+        let entry = entries.iter().find(|e| e.id == "composer-cache").unwrap();
+        assert_eq!(entry.risk, CacheRisk::Rebuildable);
+    }
+
+    #[test]
+    fn go_falls_back_to_default_path_without_binary() {
+        let home = tempdir().unwrap();
+        sparse_file(
+            &home.path().join("Library/Caches/go-build/x.bin"),
+            1024 * 1024,
+        );
+
+        let entries = list_caches_with(home.path(), &no_resolver(), &no_runner());
+        let entry = entries.iter().find(|e| e.id == "go-build-cache").unwrap();
+        assert!(matches!(&entry.strategy, CS::Trash { .. }));
+    }
+
+    #[test]
+    fn go_uses_discovered_path_and_clean_command_when_binary_exists() {
+        let home = tempdir().unwrap();
+        let real_cache = home.path().join("custom/go-cache");
+        sparse_file(&real_cache.join("x.bin"), 2 * 1024 * 1024);
+
+        let resolver = no_resolver().with("go");
+        let runner = no_runner().with_output("go", &format!("{}\n", real_cache.display()));
+
+        let entries = list_caches_with(home.path(), &resolver, &runner);
+        let entry = entries.iter().find(|e| e.id == "go-build-cache").unwrap();
+        assert_eq!(entry.paths, vec![real_cache]);
+        assert!(matches!(&entry.strategy, CS::Command { program, .. } if program == "go"));
+    }
+
+    #[test]
+    fn go_absent_when_neither_binary_nor_default_path_exist() {
+        let home = tempdir().unwrap();
+        let entries = list_caches_with(home.path(), &no_resolver(), &no_runner());
+        assert!(!entries.iter().any(|e| e.id == "go-build-cache"));
     }
 
     #[test]
