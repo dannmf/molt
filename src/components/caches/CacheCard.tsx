@@ -1,4 +1,4 @@
-import { formatBytes } from "../../lib/format";
+import { formatBytes, pathBasename } from "../../lib/format";
 import type { CacheEntry } from "../../types";
 import { TargetIcon } from "../icons/Icons";
 import { RiskPill } from "./RiskPill";
@@ -20,6 +20,19 @@ export function CacheCard({ cache, onClean }: CacheCardProps) {
       </div>
 
       <p className="text-sm text-neutral-600 dark:text-neutral-400">{cache.description}</p>
+
+      {cache.paths.length > 0 && (
+        <ul className="flex max-h-28 flex-col gap-1.5 overflow-y-auto rounded-md border border-black/5 bg-black/[0.02] p-2 dark:border-white/5 dark:bg-white/[0.03]">
+          {cache.paths.map((path) => (
+            <li key={path} className="min-w-0">
+              <p className="truncate text-xs font-medium text-neutral-700 dark:text-neutral-300">{pathBasename(path)}</p>
+              <p className="truncate text-[11px] text-neutral-500 dark:text-neutral-500" title={path}>
+                {path}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <div className="mt-auto flex items-center justify-between">
         <span className="tabular-nums text-sm font-semibold text-emerald-600 dark:text-emerald-400">
