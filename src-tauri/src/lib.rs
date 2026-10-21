@@ -2,7 +2,6 @@ pub mod caches;
 pub mod cleanup;
 pub mod commands;
 pub mod detectors;
-pub mod docker;
 pub mod error;
 pub mod model;
 pub mod scanner;
@@ -41,8 +40,6 @@ pub fn run() {
             commands::list_caches,
             commands::run_cleanup,
             commands::reveal_in_finder,
-            commands::list_docker_resources,
-            commands::clean_docker_resource,
         ])
         .run(tauri::generate_context!())
         .expect("erro ao iniciar o Molt");

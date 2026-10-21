@@ -75,22 +75,6 @@ export interface CacheEntry {
   description: string;
 }
 
-export interface DockerContainerInfo {
-  id: string;
-  name: string;
-  image: string;
-  status: string;
-}
-
-export interface DockerSummary {
-  available: boolean;
-  danglingImages: CacheEntry[];
-  stoppedContainers: CacheEntry[];
-  runningContainers: DockerContainerInfo[];
-  orphanVolumes: CacheEntry[];
-  buildCache: CacheEntry | null;
-}
-
 export interface ScanRequest {
   roots: string[];
   maxDepth: number;

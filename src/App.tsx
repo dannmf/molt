@@ -1,5 +1,4 @@
 import { CachesView } from "./components/caches/CachesView";
-import { DockerView } from "./components/docker/DockerView";
 import { OnboardingView } from "./components/onboarding/OnboardingView";
 import { ProjectsView } from "./components/projects/ProjectsView";
 import { Sidebar } from "./components/shell/Sidebar";
@@ -17,7 +16,6 @@ export default function App() {
         {view === "onboarding" && <OnboardingView />}
         {view === "projects" && <ProjectsView />}
         {view === "caches" && <CachesView />}
-        {view === "docker" && <DockerView />}
       </main>
     </div>
   );
