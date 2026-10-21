@@ -3,10 +3,21 @@ import { create } from "zustand";
 import type { ProjectKind } from "../types";
 import type { ProjectFilters, ProjectSortKey, SortDirection } from "../lib/projects";
 import { EMPTY_FILTERS } from "../lib/projects";
+import type { Theme } from "../lib/theme";
+import { resolveInitialTheme, THEME_STORAGE_KEY, toggleTheme as flipTheme } from "../lib/theme";
 
 export type AppView = "onboarding" | "projects" | "caches";
 
 export const DEFAULT_ROOTS = ["~/Developer", "~/Projects", "~/Documents"];
+
+function initialTheme(): Theme {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+  return resolveInitialTheme(stored, prefersDark);
+}
 
 interface AppState {
   view: AppView;
@@ -16,8 +27,11 @@ interface AppState {
   sortDirection: SortDirection;
   filters: ProjectFilters;
   selectedIds: Set<string>;
+  theme: Theme;
 
   setView: (view: AppView) => void;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
   addRoot: (root: string) => void;
   removeRoot: (root: string) => void;
   toggleRoot: (root: string) => void;
@@ -39,8 +53,11 @@ export const useAppStore = create<AppState>((set) => ({
   sortDirection: "desc",
   filters: EMPTY_FILTERS,
   selectedIds: new Set(),
+  theme: initialTheme(),
 
   setView: (view) => set({ view }),
+  setTheme: (theme) => set({ theme }),
+  toggleTheme: () => set((state) => ({ theme: flipTheme(state.theme) })),
 
   addRoot: (root) =>
     set((state) => (state.roots.includes(root) ? state : { roots: [...state.roots, root] })),
