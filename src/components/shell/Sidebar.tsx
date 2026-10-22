@@ -1,3 +1,5 @@
+import moltMarkDark from "../../assets/brand/molt-mark-dark.svg";
+import moltMarkLight from "../../assets/brand/molt-mark-light.svg";
 import type { AppView } from "../../store/useAppStore";
 import { useAppStore } from "../../store/useAppStore";
 import { BoxIcon, HistoryIcon, MoonIcon, ScanIcon, SunIcon, TrashIcon } from "../icons/Icons";
@@ -26,7 +28,10 @@ export function Sidebar() {
   return (
     <aside className="flex w-48 shrink-0 flex-col gap-1 border-r border-black/10 bg-white/60 px-3 py-4 backdrop-blur-xl dark:border-white/10 dark:bg-neutral-900/40">
       <div className="flex items-center justify-between px-2 pb-3">
-        <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Molt</p>
+        <div className="flex items-center gap-1.5">
+          <img src={theme === "dark" ? moltMarkDark : moltMarkLight} alt="" className="h-5 w-5" />
+          <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Molt</p>
+        </div>
         <button
           type="button"
           onClick={toggleTheme}
