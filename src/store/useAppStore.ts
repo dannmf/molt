@@ -5,6 +5,7 @@ import { loadExcludedPaths, saveExcludedPaths } from "../lib/exclusions";
 import { loadLastScanAt, saveLastScanAt } from "../lib/lastScan";
 import type { ProjectFilters, ProjectSortKey, SortDirection } from "../lib/projects";
 import { EMPTY_FILTERS } from "../lib/projects";
+import { loadRoots, saveRoots } from "../lib/roots";
 import type { Theme } from "../lib/theme";
 import { resolveInitialTheme, THEME_STORAGE_KEY, toggleTheme as flipTheme } from "../lib/theme";
 
@@ -53,7 +54,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   view: "onboarding",
-  roots: [...DEFAULT_ROOTS],
+  roots: loadRoots() ?? [...DEFAULT_ROOTS],
   hasScanned: false,
   sortKey: "reclaimableBytes",
   sortDirection: "desc",
@@ -68,16 +69,30 @@ export const useAppStore = create<AppState>((set) => ({
   toggleTheme: () => set((state) => ({ theme: flipTheme(state.theme) })),
 
   addRoot: (root) =>
-    set((state) => (state.roots.includes(root) ? state : { roots: [...state.roots, root] })),
+    set((state) => {
+      if (state.roots.includes(root)) {
+        return state;
+      }
+      const roots = [...state.roots, root];
+      saveRoots(roots);
+      return { roots };
+    }),
 
-  removeRoot: (root) => set((state) => ({ roots: state.roots.filter((r) => r !== root) })),
+  removeRoot: (root) =>
+    set((state) => {
+      const roots = state.roots.filter((r) => r !== root);
+      saveRoots(roots);
+      return { roots };
+    }),
 
   toggleRoot: (root) =>
-    set((state) =>
-      state.roots.includes(root)
-        ? { roots: state.roots.filter((r) => r !== root) }
-        : { roots: [...state.roots, root] },
-    ),
+    set((state) => {
+      const roots = state.roots.includes(root)
+        ? state.roots.filter((r) => r !== root)
+        : [...state.roots, root];
+      saveRoots(roots);
+      return { roots };
+    }),
 
   excludePath: (path) =>
     set((state) => {
