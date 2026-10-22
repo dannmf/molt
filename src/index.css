@@ -1,3 +1,81 @@
+/* Molt — tokens de interface (Tailwind CSS v4)
+ *
+ * Raios: use só rounded-xs (2px), rounded-sm (4px) e rounded-md (6px) — os
+ * padrões do Tailwind v4 já são esses valores. Nada acima de 6px.
+ */
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --canvas: oklch(0.982 0.004 85);      /* fundo do conteúdo */
+  --panel: oklch(0.962 0.005 85);       /* sidebar, barras */
+  --surface: oklch(0.995 0.002 85);     /* controles, popover */
+  --hover: oklch(0.955 0.006 85);
+  --select: oklch(0.962 0.028 80);      /* linha selecionada */
+  --line: oklch(0.905 0.006 80);        /* divisórias */
+  --line-strong: oklch(0.83 0.008 80);  /* borda de controle */
+  --ink: oklch(0.24 0.012 65);
+  --ink-2: oklch(0.45 0.012 65);
+  --ink-3: oklch(0.54 0.01 65);
+  --shed: oklch(0.769 0.165 70);        /* #f59e0b — espaço recuperável, ação primária */
+  --shed-ink: oklch(0.24 0.04 60);      /* texto sobre âmbar */
+  --risk: oklch(0.55 0.17 32);          /* perda de trabalho */
+  --safe: oklch(0.52 0.1 150);
+  --recreate: oklch(0.52 0.08 245);
+  --pop-shadow: 0 1px 2px oklch(0.2 0.02 60 / 0.06), 0 10px 28px -10px oklch(0.2 0.02 60 / 0.28);
+}
+
+.dark {
+  color-scheme: dark;
+  --canvas: oklch(0.31 0.008 275);
+  --panel: oklch(0.285 0.008 275);
+  --surface: oklch(0.345 0.009 275);
+  --hover: oklch(0.37 0.009 275);
+  --select: oklch(0.375 0.03 75);
+  --line: oklch(0.385 0.008 275);
+  --line-strong: oklch(0.47 0.01 275);
+  --ink: oklch(0.94 0.005 275);
+  --ink-2: oklch(0.82 0.008 275);
+  --ink-3: oklch(0.71 0.01 275);
+  --shed: oklch(0.769 0.165 70);
+  --shed-ink: oklch(0.2 0.03 60);
+  --risk: oklch(0.76 0.14 38);
+  --safe: oklch(0.78 0.11 150);
+  --recreate: oklch(0.78 0.08 245);
+  --pop-shadow: 0 1px 2px oklch(0 0 0 / 0.2), 0 12px 32px -8px oklch(0 0 0 / 0.45);
+}
+
+@theme inline {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-surface: var(--surface);
+  --color-hover: var(--hover);
+  --color-select: var(--select);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-shed: var(--shed);
+  --color-shed-ink: var(--shed-ink);
+  --color-risk: var(--risk);
+  --color-safe: var(--safe);
+  --color-recreate: var(--recreate);
+
+  --shadow-pop: var(--pop-shadow);
+}
+
+@layer base {
+  body {
+    @apply bg-canvas font-sans text-[13px] leading-5 text-ink antialiased;
+  }
+  /* todo número medido (tamanho, contagem) alinha em coluna */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+}
