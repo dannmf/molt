@@ -13,7 +13,7 @@ export default function App() {
   useThemeSync();
 
   return (
-    <div className="flex h-screen w-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+    <div className="flex h-screen w-screen bg-canvas text-ink">
       <Sidebar />
       <div className="relative flex flex-1 flex-col overflow-hidden">
         <ScanReminderBanner />

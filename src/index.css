@@ -29,13 +29,13 @@
 
 .dark {
   color-scheme: dark;
-  --canvas: oklch(0.31 0.008 275);
-  --panel: oklch(0.285 0.008 275);
-  --surface: oklch(0.345 0.009 275);
-  --hover: oklch(0.37 0.009 275);
-  --select: oklch(0.375 0.03 75);
-  --line: oklch(0.385 0.008 275);
-  --line-strong: oklch(0.47 0.01 275);
+  --canvas: oklch(0.38 0.008 275);
+  --panel: oklch(0.355 0.008 275);
+  --surface: oklch(0.415 0.009 275);
+  --hover: oklch(0.44 0.009 275);
+  --select: oklch(0.445 0.03 75);
+  --line: oklch(0.455 0.008 275);
+  --line-strong: oklch(0.54 0.01 275);
   --ink: oklch(0.94 0.005 275);
   --ink-2: oklch(0.82 0.008 275);
   --ink-3: oklch(0.71 0.01 275);

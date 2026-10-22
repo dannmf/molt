@@ -173,7 +173,6 @@ export function OnboardingView() {
               <ScanIcon className="size-4" />
               Começar varredura
             </button>
-            <span className="font-mono text-[11.5px] text-ink-3">só leitura · nada é apagado nesta etapa</span>
           </div>
         )}
         {isError && <p className="text-[13px] text-risk">A varredura falhou. Tente novamente.</p>}
