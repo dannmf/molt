@@ -2,7 +2,7 @@ import type { Project } from "../../types";
 import { formatBytes, formatRelativeDate } from "../../lib/format";
 import type { ProjectSortKey, SortDirection } from "../../lib/projects";
 import { useAppStore } from "../../store/useAppStore";
-import { TargetIcon, ChevronDownIcon, ChevronUpIcon, EyeOffIcon, FolderIcon, TrashIcon } from "../icons/Icons";
+import { TargetIcon, ChevronDownIcon, ChevronUpIcon, EyeOffIcon, FolderIcon, GitBranchIcon, TrashIcon } from "../icons/Icons";
 import { revealInFinder } from "../../api/client";
 import { GitBadges } from "./GitBadges";
 import { StackBadge } from "./StackBadge";
@@ -89,7 +89,11 @@ export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject, onIg
                 {project.path}
               </p>
               {project.git && (
-                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <div
+                  className="mt-1 flex flex-wrap items-center gap-1.5"
+                  title={`Versionamento git${project.git.branch ? ` · branch ${project.git.branch}` : ""}`}
+                >
+                  <GitBranchIcon className="h-3 w-3 shrink-0 text-neutral-400 dark:text-neutral-500" />
                   <span className="text-xs text-neutral-500 dark:text-neutral-500">
                     {project.git.lastCommitAt !== null ? formatRelativeDate(project.git.lastCommitAt) : "sem commits"}
                   </span>
