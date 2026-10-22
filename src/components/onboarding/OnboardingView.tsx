@@ -76,7 +76,9 @@ export function OnboardingView() {
   const hasScanned = useAppStore((state) => state.hasScanned);
   const excludedPaths = useAppStore((state) => state.excludedPaths);
   const includePath = useAppStore((state) => state.includePath);
-  const { scan, isScanning, isError, progressPct, projectsFound, currentPath, rootProgress } = useScan();
+  const { scan, isScanning, isError, progressPct, projectsFound, currentPath, rootProgress } = useScan({
+    onComplete: markScanned,
+  });
   const [customRoot, setCustomRoot] = useState("");
   const [showIgnored, setShowIgnored] = useState(false);
 
@@ -97,7 +99,7 @@ export function OnboardingView() {
   }
 
   function handleStart() {
-    scan(roots, { onSuccess: () => markScanned() });
+    scan(roots);
   }
 
   if (isScanning) {

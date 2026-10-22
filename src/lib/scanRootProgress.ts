@@ -27,10 +27,17 @@ export function createScanRootTracker(roots: string[]): ScanRootTracker {
   return { roots, activeIndex: -1, boundaries: roots.map(() => 0), lastSeenAtActive: 0 };
 }
 
-function pathBelongsToRoot(path: string, root: string): boolean {
+export function pathBelongsToRoot(path: string, root: string): boolean {
   if (!path) return false;
   const normalizedRoot = root.endsWith("/") ? root.slice(0, -1) : root;
   return path === normalizedRoot || path.startsWith(`${normalizedRoot}/`);
+}
+
+/** Conta, para cada raiz, quantos dos caminhos finais de projeto pertencem a ela.
+ * Usado para animar a lista de raízes até a contagem real quando a varredura
+ * termina antes (ou sem) o suficiente de eventos `scan://progress` ao vivo. */
+export function finalRootCounts(roots: string[], projectPaths: string[]): number[] {
+  return roots.map((root) => projectPaths.filter((path) => pathBelongsToRoot(path, root)).length);
 }
 
 /** Avança o tracker com um novo evento de progresso. Retorna um novo tracker
