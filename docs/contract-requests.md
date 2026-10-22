@@ -364,3 +364,20 @@ era ligação real, não forma de dado nova.
   `"transparent": true` na janela principal e `main.rs`/`lib.rs` chama
   `window_vibrancy::apply_vibrancy` na janela ao iniciar. `backdrop-blur-xl` em
   `Sidebar.tsx` foi mantido como reforço visual sobre o vidro nativo, não removido.
+
+## 2026-10-22 — feat/redesign-ui — restauração a partir da Lixeira (undo real de limpeza)
+
+O que: o spec de design (`docs/design_handoff_molt_redesign/README.md`) pede que toda
+limpeza (artefatos, cache, projeto) mostre um toast com botão "Desfazer" funcional. Isso
+exigiria um comando tipo `restore_from_trash(paths: Vec<String>)` que desfizesse o
+`trash::delete` do `cleanup/mod.rs` para os itens daquela limpeza específica.
+
+Por quê: hoje `cleanup/mod.rs` só expõe `trash_delete`, que é uma via de mão única (move
+para a Lixeira do macOS e não guarda referência para restaurar depois). Sem um comando de
+restauração real no backend, um botão "Desfazer" que não desfaz nada seria enganoso.
+
+Workaround local: o toast de confirmação pós-limpeza (`ConfirmCleanupModal` +
+`useToastStore`) é mostrado sem botão de desfazer para limpezas reais (artefatos/cache).
+A única ação com "Desfazer" genuinamente funcional é "Ignorar projeto"
+(`ProjectsView.handleIgnoreProject`), por ser puramente estado local (`excludePath`/
+`restoreProject`), sem nenhuma chamada ao backend.
