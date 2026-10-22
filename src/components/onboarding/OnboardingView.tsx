@@ -2,8 +2,8 @@ import { useState } from "react";
 
 import { pickFolder } from "../../api/client";
 import { useScan } from "../../hooks/useScan";
-import { DEFAULT_ROOTS, useAppStore } from "../../store/useAppStore";
-import { FolderIcon, PlusIcon, ScanIcon, XIcon } from "../icons/Icons";
+import { useAppStore } from "../../store/useAppStore";
+import { FolderIcon, ScanIcon, XIcon } from "../icons/Icons";
 import { ProgressBar } from "../shared/ProgressBar";
 import { ScanningAnimation } from "../shared/ScanningAnimation";
 
@@ -16,8 +16,6 @@ export function OnboardingView() {
   const includePath = useAppStore((state) => state.includePath);
   const { scan, isScanning, isError, progressPct } = useScan();
   const [customRoot, setCustomRoot] = useState("");
-
-  const missingDefaults = DEFAULT_ROOTS.filter((root) => !roots.includes(root));
 
   function handleAddCustom() {
     const trimmed = customRoot.trim();
@@ -77,22 +75,6 @@ export function OnboardingView() {
           ))}
           {roots.length === 0 && <li className="text-sm text-neutral-500">Nenhuma pasta selecionada.</li>}
         </ul>
-
-        {missingDefaults.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {missingDefaults.map((root) => (
-              <button
-                key={root}
-                type="button"
-                onClick={() => addRoot(root)}
-                className="flex items-center gap-1 rounded-full border border-dashed border-black/20 px-3 py-1 text-sm text-neutral-500 hover:border-black/40 hover:text-neutral-700 dark:border-white/20 dark:hover:border-white/40 dark:hover:text-neutral-300"
-              >
-                <PlusIcon className="h-3 w-3" />
-                {root}
-              </button>
-            ))}
-          </div>
-        )}
 
         <div className="mt-4 flex gap-2">
           <input
