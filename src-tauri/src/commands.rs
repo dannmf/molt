@@ -78,10 +78,17 @@ pub async fn scan_projects<R: Runtime>(
 }
 
 /// Lista o catálogo de caches de ferramentas de dev encontradas no HOME do usuário.
+/// Roda em `spawn_blocking` pelo mesmo motivo de `scan_projects`: medir cada
+/// entrada do catálogo é I/O síncrono (mesmo paralelizado entre si via rayon)
+/// e bloquearia a thread async do Tauri se rodasse direto nela.
 #[tauri::command]
-pub fn list_caches(state: State<'_, Mutex<AppState>>) -> Result<Vec<CacheEntry>, AppError> {
+pub async fn list_caches(state: State<'_, Mutex<AppState>>) -> Result<Vec<CacheEntry>, AppError> {
     let home = home_dir()?;
-    let entries = caches::list_caches(&home);
+
+    let entries = tauri::async_runtime::spawn_blocking(move || caches::list_caches(&home))
+        .await
+        .map_err(|join_error| AppError::Other(join_error.to_string()))?;
+
     state.lock().unwrap().last_caches = entries.clone();
     Ok(entries)
 }

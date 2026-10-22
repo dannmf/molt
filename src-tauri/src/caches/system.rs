@@ -15,7 +15,9 @@ use std::time::{Duration, Instant};
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Encontra o caminho absoluto de um binário no `PATH`, sem invocar shell.
-pub trait BinaryResolver {
+/// `Sync` porque o catálogo de caches mede várias entradas em paralelo (ver
+/// `caches::list_caches_with`) sobre a mesma referência.
+pub trait BinaryResolver: Sync {
     fn resolve(&self, name: &str) -> Option<PathBuf>;
 }
 
@@ -44,7 +46,8 @@ fn is_executable_file(path: &Path) -> bool {
 /// sem trim) se ele terminar com sucesso dentro do timeout. Qualquer falha —
 /// spawn, timeout, saída diferente de zero — resulta em `None`, nunca em panic
 /// ou em travar a chamada indefinidamente.
-pub trait CommandRunner {
+/// `Sync` pelo mesmo motivo de `BinaryResolver`: medido em paralelo pelo catálogo.
+pub trait CommandRunner: Sync {
     fn run(&self, program: &Path, args: &[&str], timeout: Duration) -> Option<String>;
 }
 

@@ -56,7 +56,8 @@ fn list_caches_returns_real_catalog() {
     let app = build_app();
     let state = app.state::<Mutex<AppState>>();
 
-    let caches = molt_lib::commands::list_caches(state).expect("list_caches deveria funcionar");
+    let caches = tauri::async_runtime::block_on(molt_lib::commands::list_caches(state))
+        .expect("list_caches deveria funcionar");
     assert!(!caches.is_empty());
 }
 
