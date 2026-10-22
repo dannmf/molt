@@ -1,7 +1,6 @@
-import { formatBytes } from "../../lib/format";
+import { formatBytes, formatRelativeDate } from "../../lib/format";
 import type { ProjectTotals } from "../../lib/projects";
 import { useAppStore } from "../../store/useAppStore";
-import { ScanIcon } from "../icons/Icons";
 
 interface ProjectsSummaryBarProps {
   totals: ProjectTotals;
@@ -10,36 +9,41 @@ interface ProjectsSummaryBarProps {
 
 export function ProjectsSummaryBar({ totals, projectCount }: ProjectsSummaryBarProps) {
   const setView = useAppStore((state) => state.setView);
+  const roots = useAppStore((state) => state.roots);
+  const lastScanAt = useAppStore((state) => state.lastScanAt);
+
+  const pct = totals.totalBytes > 0 ? Math.round((totals.reclaimableBytes / totals.totalBytes) * 100) : 0;
 
   return (
-    <div className="flex items-center justify-between gap-6 border-b border-black/10 bg-white/70 px-6 py-4 dark:border-white/10 dark:bg-neutral-900/60">
-      <div className="flex gap-8">
-        <div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Projetos encontrados</p>
-          <p className="text-lg font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">{projectCount}</p>
-        </div>
-        <div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Espaço ocupado</p>
-          <p className="text-lg font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
-            {formatBytes(totals.totalBytes)}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Recuperável</p>
-          <p className="text-lg font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-            {formatBytes(totals.reclaimableBytes)}
-          </p>
-        </div>
+    <div className="flex flex-wrap items-end justify-between gap-6 border-b border-line px-7 pt-[26px] pb-5">
+      <div>
+        <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-ink">Projetos</h1>
+        <p className="mt-1 font-mono text-[11.5px] text-ink-3">
+          {lastScanAt !== null ? `varrido ${formatRelativeDate(lastScanAt)}` : "nunca varrido"} · {roots.length}{" "}
+          {roots.length === 1 ? "pasta raiz" : "pastas raiz"} · {projectCount} {projectCount === 1 ? "projeto" : "projetos"}
+        </p>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setView("onboarding")}
-        className="flex items-center gap-1.5 rounded-md border border-black/10 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-black/5 dark:border-white/10 dark:text-neutral-400 dark:hover:bg-white/5"
-      >
-        <ScanIcon className="h-4 w-4" />
-        Nova varredura
-      </button>
+      <div className="flex items-end gap-8">
+        <div>
+          <p className="text-xs text-ink-3">Recuperável</p>
+          <p className="mt-0.5 font-mono text-[22px] leading-7 font-medium text-ink">{formatBytes(totals.reclaimableBytes)}</p>
+          <div className="mt-1.5 h-[3px] w-[148px] bg-line">
+            <div className="h-full bg-shed" style={{ width: `${pct}%` }} />
+          </div>
+        </div>
+        <div>
+          <p className="text-xs text-ink-3">Ocupado</p>
+          <p className="mt-0.5 font-mono text-[22px] leading-7 text-ink-2">{formatBytes(totals.totalBytes)}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setView("onboarding")}
+          className="h-[30px] shrink-0 rounded-sm border border-line-strong bg-surface px-3 text-[13px] font-medium text-ink transition-colors duration-100 hover:border-ink-3"
+        >
+          Nova varredura
+        </button>
+      </div>
     </div>
   );
 }

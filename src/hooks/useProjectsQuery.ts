@@ -32,5 +32,8 @@ export function useProjectsCacheActions() {
       queryClient.setQueryData<Project[]>(PROJECTS_QUERY_KEY, (prev) =>
         (prev ?? []).filter((project) => !projectIds.includes(project.id)),
       ),
+    /** Desfaz `removeProjects` (ver `ProjectsView.handleIgnoreProject`): devolve o projeto ao cache. */
+    restoreProject: (project: Project) =>
+      queryClient.setQueryData<Project[]>(PROJECTS_QUERY_KEY, (prev) => [...(prev ?? []), project]),
   };
 }
