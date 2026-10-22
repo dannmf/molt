@@ -16,7 +16,10 @@ mod system;
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::time::Duration;
+
+use rayon::prelude::*;
 
 use crate::error::AppError;
 use crate::model::{CacheEntry, CacheRisk, CleanStrategy};
@@ -44,25 +47,63 @@ pub fn list_caches(home: &Path) -> Vec<CacheEntry> {
     list_caches_with(home, &PathBinaryResolver, &TimeoutCommandRunner)
 }
 
+/// Cada entrada do catálogo mede uma árvore de diretórios independente das
+/// outras (sem path compartilhado, sem dedup entre elas — `dir_bytes` já
+/// dedupica só dentro de si mesma). Em disco real, essas árvores somadas
+/// chegam a dezenas de GB e centenas de milhares de arquivos (ex.: cache do
+/// npm, store do pnpm), e medi-las uma atrás da outra fazia a tela de Caches
+/// parecer travada por minutos. Rodar cada uma em paralelo (`rayon::scope`)
+/// divide esse tempo pelo número de núcleos disponíveis em vez de somá-lo.
 fn list_caches_with(
     home: &Path,
     resolver: &dyn BinaryResolver,
     runner: &dyn CommandRunner,
 ) -> Vec<CacheEntry> {
-    let mut entries: Vec<CacheEntry> = SIMPLE_CACHE_RULES
-        .iter()
-        .filter_map(|rule| rule.build(home))
-        .collect();
+    let entries: Mutex<Vec<CacheEntry>> = Mutex::new(Vec::new());
 
-    entries.extend(ios_device_support_old(home));
-    entries.extend(unavailable_simulators(home, resolver));
-    entries.extend(android_avds(home));
-    entries.extend(pnpm_store(home, resolver, runner));
-    entries.extend(go_build_cache(home, resolver, runner));
-    entries.extend(homebrew_cache(resolver, runner));
-    entries.extend(docker_cache(resolver, runner));
+    rayon::scope(|s| {
+        s.spawn(|_| {
+            let simple: Vec<CacheEntry> = SIMPLE_CACHE_RULES
+                .par_iter()
+                .filter_map(|rule| rule.build(home))
+                .collect();
+            entries.lock().unwrap().extend(simple);
+        });
+        s.spawn(|_| entries.lock().unwrap().extend(ios_device_support_old(home)));
+        s.spawn(|_| {
+            entries
+                .lock()
+                .unwrap()
+                .extend(unavailable_simulators(home, resolver))
+        });
+        s.spawn(|_| entries.lock().unwrap().extend(android_avds(home)));
+        s.spawn(|_| {
+            entries
+                .lock()
+                .unwrap()
+                .extend(pnpm_store(home, resolver, runner))
+        });
+        s.spawn(|_| {
+            entries
+                .lock()
+                .unwrap()
+                .extend(go_build_cache(home, resolver, runner))
+        });
+        s.spawn(|_| {
+            entries
+                .lock()
+                .unwrap()
+                .extend(homebrew_cache(resolver, runner))
+        });
+        s.spawn(|_| {
+            entries
+                .lock()
+                .unwrap()
+                .extend(docker_cache(resolver, runner))
+        });
+    });
 
-    entries
+    entries.into_inner().unwrap()
 }
 
 /// Soma de blocos alocados (`st_blocks * 512`) sob `path`, sem seguir symlinks e
