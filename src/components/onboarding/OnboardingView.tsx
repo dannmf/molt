@@ -2,9 +2,71 @@ import { useState } from "react";
 
 import { pickFolder } from "../../api/client";
 import { useScan } from "../../hooks/useScan";
+import type { RootScanState } from "../../lib/scanRootProgress";
 import { useAppStore } from "../../store/useAppStore";
 import { ChevronDownIcon, ChevronUpIcon, FolderIcon, ScanIcon } from "../icons/Icons";
 import { ProgressBar } from "../shared/ProgressBar";
+
+function ScanningView({
+  rootCount,
+  projectsFound,
+  progressPct,
+  currentPath,
+  rootProgress,
+}: {
+  rootCount: number;
+  projectsFound: number;
+  progressPct: number;
+  currentPath: string;
+  rootProgress: RootScanState[];
+}) {
+  return (
+    <div>
+      <h1 className="text-[26px] leading-8 font-semibold tracking-[-0.01em] text-ink">Varrendo pastas</h1>
+      <p className="mt-2 text-[14.5px] leading-[23px] text-ink-2">
+        {rootCount} {rootCount === 1 ? "pasta raiz" : "pastas raiz"} · Lixeira do macOS como destino
+      </p>
+
+      <div className="mt-9">
+        <div className="flex items-end justify-between gap-4">
+          <div className="flex items-baseline gap-2.5">
+            <span className="font-mono text-[40px] leading-none font-semibold tracking-[-0.02em] text-ink">
+              {projectsFound}
+            </span>
+            <span className="text-[14px] text-ink-2">projetos encontrados</span>
+          </div>
+          <span className="font-mono text-[13px] text-ink-2">{progressPct}%</span>
+        </div>
+        <div className="mt-3">
+          <ProgressBar percent={progressPct} />
+        </div>
+        <p className="mt-2.5 truncate font-mono text-[11.5px] text-ink-3">{currentPath}</p>
+      </div>
+
+      <div className="mt-9">
+        <h2 className="text-sm font-semibold text-ink">Pastas raiz da varredura</h2>
+        <ul className="mt-2 border-t border-line">
+          {rootProgress.map(({ root, status, projects }) => (
+            <li key={root} className="flex h-9 items-center justify-between gap-3 border-b border-line">
+              <span className="truncate font-mono text-[12.5px] text-ink">{root}</span>
+              {status === "waiting" ? (
+                <span className="shrink-0 text-xs text-ink-3">aguardando</span>
+              ) : (
+                <span className="flex shrink-0 items-center gap-2 font-mono text-xs text-ink-2">
+                  <span
+                    aria-hidden="true"
+                    className={`size-1.5 shrink-0 rounded-full ${status === "scanning" ? "animate-pulse bg-shed" : "bg-ink-3"}`}
+                  />
+                  {projects} {projects === 1 ? "projeto" : "projetos"}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 export function OnboardingView() {
   const roots = useAppStore((state) => state.roots);
@@ -14,7 +76,9 @@ export function OnboardingView() {
   const hasScanned = useAppStore((state) => state.hasScanned);
   const excludedPaths = useAppStore((state) => state.excludedPaths);
   const includePath = useAppStore((state) => state.includePath);
-  const { scan, isScanning, isError, progressPct, projectsFound, currentPath } = useScan();
+  const { scan, isScanning, isError, progressPct, projectsFound, currentPath, rootProgress } = useScan({
+    onComplete: markScanned,
+  });
   const [customRoot, setCustomRoot] = useState("");
   const [showIgnored, setShowIgnored] = useState(false);
 
@@ -35,7 +99,23 @@ export function OnboardingView() {
   }
 
   function handleStart() {
-    scan(roots, { onSuccess: () => markScanned() });
+    scan(roots);
+  }
+
+  if (isScanning) {
+    return (
+      <div className="flex h-full justify-center overflow-y-auto">
+        <div className="w-full max-w-[620px] px-10 pt-[72px] pb-16">
+          <ScanningView
+            rootCount={roots.length}
+            projectsFound={projectsFound}
+            progressPct={progressPct}
+            currentPath={currentPath}
+            rootProgress={rootProgress}
+          />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -151,30 +231,17 @@ export function OnboardingView() {
           )}
         </div>
 
-        {isScanning ? (
-          <div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-[13px] font-semibold text-ink">Varrendo…</span>
-              <span className="font-mono text-xs text-ink-2">{projectsFound} projetos</span>
-            </div>
-            <div className="mt-2.5">
-              <ProgressBar percent={progressPct} />
-            </div>
-            <p className="mt-2 truncate font-mono text-[11.5px] text-ink-3">{currentPath}</p>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleStart}
-              disabled={roots.length === 0}
-              className="flex h-[34px] items-center gap-2 rounded-sm bg-shed px-[18px] text-[13.5px] font-semibold text-shed-ink transition-opacity duration-100 enabled:hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-shed"
-            >
-              <ScanIcon className="size-4" />
-              Começar varredura
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={roots.length === 0}
+            className="flex h-[34px] items-center gap-2 rounded-sm bg-shed px-[18px] text-[13.5px] font-semibold text-shed-ink transition-opacity duration-100 enabled:hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-shed"
+          >
+            <ScanIcon className="size-4" />
+            Começar varredura
+          </button>
+        </div>
         {isError && <p className="text-[13px] text-risk">A varredura falhou. Tente novamente.</p>}
       </div>
     </div>
