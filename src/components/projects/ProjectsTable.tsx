@@ -63,9 +63,7 @@ export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject, onIg
           </th>
           <SortableHeader label="Nome" sortKey="name" activeKey={sortKey} direction={sortDirection} onSort={setSort} />
           <th className="px-3 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400">Stack</th>
-          <SortableHeader label="Total" sortKey="totalBytes" activeKey={sortKey} direction={sortDirection} onSort={setSort} align="right" />
-          <SortableHeader label="Recuperável" sortKey="reclaimableBytes" activeKey={sortKey} direction={sortDirection} onSort={setSort} align="right" />
-          <th className="px-3 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400">Git</th>
+          <SortableHeader label="Espaço" sortKey="reclaimableBytes" activeKey={sortKey} direction={sortDirection} onSort={setSort} align="right" />
           <SortableHeader label="Última modificação" sortKey="lastModifiedAt" activeKey={sortKey} direction={sortDirection} onSort={setSort} />
           <th className="px-3 py-2 text-center text-xs font-medium text-neutral-500 dark:text-neutral-400">Ações</th>
         </tr>
@@ -90,6 +88,14 @@ export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject, onIg
               <p className="truncate text-xs text-neutral-500 dark:text-neutral-500" title={project.path}>
                 {project.path}
               </p>
+              {project.git && (
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs text-neutral-500 dark:text-neutral-500">
+                    {project.git.lastCommitAt !== null ? formatRelativeDate(project.git.lastCommitAt) : "sem commits"}
+                  </span>
+                  <GitBadges git={project.git} />
+                </div>
+              )}
             </td>
             <td className="px-3 py-2">
               <div className="flex flex-wrap gap-1">
@@ -98,21 +104,9 @@ export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject, onIg
                 ))}
               </div>
             </td>
-            <td className="px-3 py-2 text-right tabular-nums text-neutral-700 dark:text-neutral-300">
-              {formatBytes(project.totalBytes)}
-            </td>
-            <td className="px-3 py-2 text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
-              {formatBytes(project.reclaimableBytes)}
-            </td>
-            <td className="px-3 py-2">
-              <div className="flex flex-col gap-1">
-                {project.git && (
-                  <span className="text-xs text-neutral-500 dark:text-neutral-500">
-                    {project.git.lastCommitAt !== null ? formatRelativeDate(project.git.lastCommitAt) : "sem commits"}
-                  </span>
-                )}
-                <GitBadges git={project.git} />
-              </div>
+            <td className="px-3 py-2 text-right tabular-nums">
+              <p className="font-semibold text-emerald-600 dark:text-emerald-400">{formatBytes(project.reclaimableBytes)}</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-500">de {formatBytes(project.totalBytes)}</p>
             </td>
             <td className="px-3 py-2 text-neutral-600 dark:text-neutral-400">{formatRelativeDate(project.lastModifiedAt)}</td>
             <td className="px-3 py-2">
@@ -156,7 +150,7 @@ export function ProjectsTable({ projects, onCleanArtifacts, onTrashProject, onIg
         ))}
         {projects.length === 0 && (
           <tr>
-            <td colSpan={8} className="px-3 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
+            <td colSpan={6} className="px-3 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
               Nenhum projeto corresponde aos filtros.
             </td>
           </tr>

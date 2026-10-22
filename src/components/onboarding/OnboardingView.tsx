@@ -3,7 +3,7 @@ import { useState } from "react";
 import { pickFolder } from "../../api/client";
 import { useScan } from "../../hooks/useScan";
 import { useAppStore } from "../../store/useAppStore";
-import { FolderIcon, ScanIcon, XIcon } from "../icons/Icons";
+import { ChevronDownIcon, ChevronUpIcon, FolderIcon, ScanIcon, XIcon } from "../icons/Icons";
 import { ProgressBar } from "../shared/ProgressBar";
 import { ScanningAnimation } from "../shared/ScanningAnimation";
 
@@ -16,6 +16,7 @@ export function OnboardingView() {
   const includePath = useAppStore((state) => state.includePath);
   const { scan, isScanning, isError, progressPct } = useScan();
   const [customRoot, setCustomRoot] = useState("");
+  const [showIgnored, setShowIgnored] = useState(false);
 
   function handleAddCustom() {
     const trimmed = customRoot.trim();
@@ -103,27 +104,37 @@ export function OnboardingView() {
         </div>
 
         {excludedPaths.length > 0 && (
-          <>
-            <h2 className="mt-6 text-sm font-medium text-neutral-700 dark:text-neutral-300">Pastas ignoradas</h2>
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {excludedPaths.map((path) => (
-                <li
-                  key={path}
-                  className="flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1 text-sm text-neutral-700 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-300"
-                >
-                  {path}
-                  <button
-                    type="button"
-                    onClick={() => includePath(path)}
-                    aria-label={`Parar de ignorar ${path}`}
-                    className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={() => setShowIgnored((value) => !value)}
+              aria-expanded={showIgnored}
+              className="flex w-full items-center justify-between text-sm font-medium text-neutral-700 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
+            >
+              Pastas ignoradas ({excludedPaths.length})
+              {showIgnored ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
+            </button>
+            {showIgnored && (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {excludedPaths.map((path) => (
+                  <li
+                    key={path}
+                    className="flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1 text-sm text-neutral-700 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-300"
                   >
-                    <XIcon className="h-3 w-3" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
+                    {path}
+                    <button
+                      type="button"
+                      onClick={() => includePath(path)}
+                      aria-label={`Parar de ignorar ${path}`}
+                      className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                    >
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
 
         <button
