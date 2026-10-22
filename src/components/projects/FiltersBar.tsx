@@ -1,53 +1,85 @@
-import type { ProjectKind } from "../../types";
+import { kindLabel } from "../../lib/projectKind";
+import { filterProjects } from "../../lib/projects";
 import { useAppStore } from "../../store/useAppStore";
-import { StackFilterChip } from "./StackBadge";
+import type { Project, ProjectKind } from "../../types";
+import { Checkbox } from "../shared/Checkbox";
+import { Select, type SelectOption } from "../shared/Select";
 
-const IDLE_OPTIONS = [
-  { label: "Qualquer data", value: null },
-  { label: "Parado há 7+ dias", value: 7 },
-  { label: "Parado há 30+ dias", value: 30 },
-  { label: "Parado há 90+ dias", value: 90 },
-];
+type AgeValue = "any" | "1m" | "6m" | "1y" | "2y";
+
+const AGE_DAYS: Record<AgeValue, number | null> = {
+  any: null,
+  "1m": 30,
+  "6m": 182,
+  "1y": 365,
+  "2y": 730,
+};
+
+const AGE_LABELS: Record<AgeValue, string> = {
+  any: "Qualquer data",
+  "1m": "Mais de 1 mês",
+  "6m": "Mais de 6 meses",
+  "1y": "Mais de 1 ano",
+  "2y": "Mais de 2 anos",
+};
+
+function ageValueForDays(days: number | null): AgeValue {
+  const match = (Object.keys(AGE_DAYS) as AgeValue[]).find((value) => AGE_DAYS[value] === days);
+  return match ?? "any";
+}
 
 interface FiltersBarProps {
+  projects: Project[];
   availableKinds: ProjectKind[];
 }
 
-export function FiltersBar({ availableKinds }: FiltersBarProps) {
+export function FiltersBar({ projects, availableKinds }: FiltersBarProps) {
   const filters = useAppStore((state) => state.filters);
   const toggleKindFilter = useAppStore((state) => state.toggleKindFilter);
   const setMinIdleDays = useAppStore((state) => state.setMinIdleDays);
   const setOnlyWithArtifacts = useAppStore((state) => state.setOnlyWithArtifacts);
 
+  const ageOptions: SelectOption<AgeValue>[] = (Object.keys(AGE_DAYS) as AgeValue[]).map((value) => ({
+    value,
+    label: AGE_LABELS[value],
+    meta: String(filterProjects(projects, { ...filters, minIdleDays: AGE_DAYS[value] }).length),
+  }));
+
+  const stackCounts = availableKinds
+    .map((kind) => ({ kind, count: filterProjects(projects, { ...filters, kinds: [kind] }).length }))
+    .sort((a, b) => b.count - a.count);
+
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-black/10 px-6 py-3 dark:border-white/10">
-      <div className="flex flex-wrap gap-1.5">
-        {availableKinds.map((kind) => (
-          <StackFilterChip key={kind} kind={kind} active={filters.kinds.includes(kind)} onToggle={toggleKindFilter} />
-        ))}
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-line px-7 py-3">
+      <Select
+        label="Modificado"
+        value={ageValueForDays(filters.minIdleDays)}
+        onChange={(value) => setMinIdleDays(AGE_DAYS[value])}
+        options={ageOptions}
+      />
+
+      <Checkbox checked={filters.onlyWithArtifacts} onChange={(event) => setOnlyWithArtifacts(event.target.checked)} label="Só com artefatos" />
+
+      <span aria-hidden="true" className="h-4 w-px bg-line" />
+
+      <div className="flex flex-wrap gap-0.5">
+        {stackCounts.map(({ kind, count }) => {
+          const active = filters.kinds.includes(kind);
+          return (
+            <button
+              key={kind}
+              type="button"
+              onClick={() => toggleKindFilter(kind)}
+              className={`inline-flex items-center gap-1.5 rounded-xs px-[7px] py-0.5 text-[12px] transition-colors duration-100 ${
+                active ? "bg-select text-ink" : "text-ink-2 hover:text-ink"
+              }`}
+            >
+              <span>{kindLabel(kind)}</span>
+              <span className="font-mono text-[11px] text-ink-3">{count}</span>
+            </button>
+          );
+        })}
       </div>
-
-      <select
-        value={filters.minIdleDays ?? ""}
-        onChange={(event) => setMinIdleDays(event.target.value === "" ? null : Number(event.target.value))}
-        className="rounded-md border border-black/10 bg-white px-2.5 py-1.5 text-sm text-neutral-600 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-400"
-      >
-        {IDLE_OPTIONS.map((option) => (
-          <option key={option.label} value={option.value ?? ""}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-
-      <label className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400">
-        <input
-          type="checkbox"
-          checked={filters.onlyWithArtifacts}
-          onChange={(event) => setOnlyWithArtifacts(event.target.checked)}
-          className="rounded"
-        />
-        Só com artefatos
-      </label>
     </div>
   );
 }

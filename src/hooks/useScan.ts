@@ -22,6 +22,8 @@ export function useScan() {
   const queryClient = useQueryClient();
   const excludedPaths = useAppStore((state) => state.excludedPaths);
   const [progressPct, setProgressPct] = useState(0);
+  const [projectsFound, setProjectsFound] = useState(0);
+  const [currentPath, setCurrentPath] = useState("");
   const unlistenRef = useRef<(() => void) | undefined>(undefined);
 
   const mutation = useMutation({
@@ -29,8 +31,12 @@ export function useScan() {
       scanProjects({ roots, maxDepth: 6, ignore: ["node_modules", ".git", "target"], excludedPaths }),
     onMutate: () => {
       setProgressPct(0);
+      setProjectsFound(0);
+      setCurrentPath("");
       unlistenRef.current = onScanProgress((progress) => {
         setProgressPct(approximateProgress(progress.scannedDirs));
+        setProjectsFound(progress.projectsFound);
+        setCurrentPath(progress.currentPath);
       });
     },
     onSuccess: (projects: Project[]) => {
@@ -48,5 +54,7 @@ export function useScan() {
     isScanning: mutation.isPending,
     isError: mutation.isError,
     progressPct,
+    projectsFound,
+    currentPath,
   };
 }

@@ -4,13 +4,16 @@ import { useCleanup } from "../../hooks/useCleanup";
 import { canConfirmCleanup } from "../../lib/cleanupGate";
 import type { CleanupPlan } from "../../lib/cleanupPlan";
 import { formatBytes, pathBasename } from "../../lib/format";
-import { AlertIcon } from "../icons/Icons";
 
 /** Tempo simulado do "dry run" antes do botão Confirmar liberar. Não há chamada real
  * ao backend aqui: o mock de `runCleanup` sempre devolve zero, então o preview
  * (lista + total) é calculado no frontend a partir dos dados já carregados
  * (ver `lib/cleanupPlan.ts` e a nota em `docs/contract-requests.md`). */
 const DRY_RUN_DELAY_MS = 450;
+
+function RiskTriangle() {
+  return <span aria-hidden="true" className="mt-[6px] size-2 shrink-0 bg-current [clip-path:polygon(50%_0,100%_100%,0_100%)]" />;
+}
 
 interface ConfirmCleanupModalProps {
   plan: CleanupPlan | null;
@@ -39,9 +42,26 @@ export function ConfirmCleanupModal({ plan, onClose, onConfirmed }: ConfirmClean
     return () => window.clearTimeout(timer);
   }, [plan]);
 
+  useEffect(() => {
+    if (!plan) {
+      return;
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [plan, onClose]);
+
   if (!plan) {
     return null;
   }
+
+  /** Artefatos mostram só o nome final (node_modules, target...); caches mostram o
+   * caminho inteiro, já que o nome final sozinho pode não dizer nada (ex.: ".../vms/0"). */
+  const isCache = plan.onConfirmedTargetIds.kind === "cache";
 
   const canConfirm = canConfirmCleanup({
     previewReady,
@@ -63,65 +83,82 @@ export function ConfirmCleanupModal({ plan, onClose, onConfirmed }: ConfirmClean
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="w-full max-w-lg rounded-xl border border-black/10 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-neutral-900">
-        <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{plan.title}</h2>
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-[oklch(0.15_0.01_60/0.4)] p-6"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="flex w-full max-w-[480px] flex-col rounded-md border border-line-strong bg-surface shadow-pop"
+        role="dialog"
+        aria-modal="true"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex flex-col gap-1.5 px-5 pt-5">
+          <h2 className="text-[15px] leading-[22px] font-semibold text-ink">{plan.title}</h2>
+          <p className="text-ink-2" style={{ textWrap: "pretty" }}>
+            {plan.lead}
+          </p>
+        </div>
 
-        <div className="mt-4 max-h-56 overflow-y-auto rounded-lg border border-black/5 bg-black/[0.02] dark:border-white/5 dark:bg-white/[0.03]">
+        <div className="mt-4 flex flex-col border-t border-line px-5">
           {!previewReady ? (
-            <p className="p-3 text-sm text-neutral-500 dark:text-neutral-400">Calculando o que vai sair da pasta...</p>
+            <p className="py-3 text-ink-3">Calculando o que vai sair da pasta...</p>
           ) : plan.preview.length === 0 ? (
-            <p className="p-3 text-sm text-neutral-500 dark:text-neutral-400">Nada para remover.</p>
+            <p className="py-3 text-ink-3">Nada para remover.</p>
           ) : (
-            <ul className="divide-y divide-black/5 dark:divide-white/5">
+            <>
               {plan.preview.map((item) => (
-                <li key={item.path} className="flex items-start justify-between gap-3 px-3 py-2 text-sm">
-                  <div className="min-w-0">
-                    <p className="font-medium text-neutral-800 dark:text-neutral-200">{pathBasename(item.path)}</p>
-                    <p className="break-all text-xs text-neutral-500 dark:text-neutral-500" title={item.path}>
-                      {item.path}
-                    </p>
-                  </div>
-                  <span className="shrink-0 tabular-nums text-neutral-500 dark:text-neutral-400">{formatBytes(item.bytes)}</span>
-                </li>
+                <div key={item.path} className="flex min-h-8 items-center gap-4 border-b border-line py-1.5">
+                  <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-ink" title={item.path}>
+                    {isCache ? item.path : pathBasename(item.path)}
+                  </span>
+                  <span className="font-mono text-[12px] text-ink-2">{formatBytes(item.bytes)}</span>
+                </div>
               ))}
-            </ul>
+              <div className="flex h-[34px] items-center gap-4">
+                <span className="flex-1 font-semibold text-ink">Total</span>
+                <span className="font-mono text-[12.5px] font-medium text-ink">{formatBytes(plan.totalBytes)}</span>
+              </div>
+            </>
           )}
         </div>
 
-        <div className="mt-3 flex items-center justify-between text-sm">
-          <span className="text-neutral-500 dark:text-neutral-400">Total a liberar</span>
-          <span className="tabular-nums font-semibold text-neutral-900 dark:text-neutral-100">
-            {previewReady ? formatBytes(plan.totalBytes) : "..."}
-          </span>
-        </div>
+        {plan.riskText && previewReady && (
+          <div className="mt-1 flex gap-[9px] border-t border-line px-5 pt-2.5 text-risk">
+            <RiskTriangle />
+            <span className="text-[12.5px]" style={{ textWrap: "pretty" }}>
+              {plan.riskText}
+            </span>
+          </div>
+        )}
 
         {plan.requiresNameConfirmation && previewReady && (
-          <div className="mt-4 rounded-lg border border-orange-500/30 bg-orange-500/10 p-3">
-            <p className="flex items-start gap-2 text-sm text-orange-700 dark:text-orange-300">
-              <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
-              Este projeto tem alterações não commitadas ou não enviadas. Digite{" "}
-              <strong className="font-semibold">{plan.projectName}</strong> para confirmar.
-            </p>
+          <div className="mt-1 flex flex-col gap-2 border-t border-line px-5 pt-2.5">
+            <div className="flex gap-[9px] text-risk">
+              <RiskTriangle />
+              <span className="text-[12.5px]" style={{ textWrap: "pretty" }}>
+                Este projeto tem alterações não commitadas ou não enviadas. Digite{" "}
+                <strong className="font-semibold">{plan.projectName}</strong> para confirmar.
+              </span>
+            </div>
             <input
               type="text"
               value={typedName}
               onChange={(event) => setTypedName(event.target.value)}
               placeholder={plan.projectName ?? ""}
-              className="mt-2 w-full rounded-md border border-orange-500/40 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-orange-500 dark:bg-neutral-900"
+              className="h-7 rounded-sm border border-line-strong bg-canvas px-2.5 text-[13px] text-ink outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-shed"
             />
           </div>
         )}
 
-        {cleanup.isError && (
-          <p className="mt-3 text-sm text-red-600 dark:text-red-400">Não foi possível concluir a limpeza.</p>
-        )}
+        {cleanup.isError && <p className="px-5 pt-3 text-[12.5px] text-risk">Não foi possível concluir a limpeza.</p>}
 
-        <div className="mt-5 flex justify-end gap-2">
+        <div className="mt-5 flex justify-end gap-2 rounded-b-md border-t border-line bg-panel px-5 py-3">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/5"
+            className="h-[30px] rounded-sm border border-line-strong bg-surface px-3 text-[13px] text-ink transition-colors duration-100 hover:border-ink-3"
           >
             Cancelar
           </button>
@@ -129,9 +166,9 @@ export function ConfirmCleanupModal({ plan, onClose, onConfirmed }: ConfirmClean
             type="button"
             disabled={!canConfirm || cleanup.isPending}
             onClick={handleConfirm}
-            className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 hover:bg-red-700"
+            className="h-[30px] rounded-sm bg-shed px-3.5 text-[13px] font-semibold text-shed-ink transition-opacity duration-100 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-shed"
           >
-            {cleanup.isPending ? "Limpando..." : "Confirmar"}
+            {cleanup.isPending ? "Movendo..." : "Mover para Lixeira"}
           </button>
         </div>
       </div>

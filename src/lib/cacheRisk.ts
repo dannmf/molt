@@ -1,16 +1,36 @@
 import type { CacheRisk } from "../types";
 
-export interface RiskBadge {
+export interface RiskGroup {
   label: string;
-  className: string;
+  description: string;
+  marker: "circle" | "square" | "triangle";
+  colorClass: string;
 }
 
-const BADGES: Record<CacheRisk, RiskBadge> = {
-  safe: { label: "Seguro", className: "bg-green-500/15 text-green-700 dark:text-green-300" },
-  rebuildable: { label: "Recriável", className: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
-  caution: { label: "Atenção", className: "bg-orange-500/15 text-orange-700 dark:text-orange-300" },
+const GROUPS: Record<CacheRisk, RiskGroup> = {
+  safe: {
+    label: "Seguro",
+    description: "A ferramenta recria sozinha quando precisar.",
+    marker: "circle",
+    colorClass: "text-safe",
+  },
+  rebuildable: {
+    label: "Recriável",
+    description: "Volta no próximo build ou install, que fica mais lento uma vez.",
+    marker: "square",
+    colorClass: "text-recreate",
+  },
+  caution: {
+    label: "Atenção",
+    description: "Contém algo que não volta sozinho. Leia antes de limpar.",
+    marker: "triangle",
+    colorClass: "text-risk",
+  },
 };
 
-export function riskBadge(risk: CacheRisk): RiskBadge {
-  return BADGES[risk];
+/** Ordem de exibição dos grupos de risco na tabela de Caches. */
+export const RISK_ORDER: CacheRisk[] = ["safe", "rebuildable", "caution"];
+
+export function riskGroup(risk: CacheRisk): RiskGroup {
+  return GROUPS[risk];
 }

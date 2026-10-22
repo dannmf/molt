@@ -70,3 +70,26 @@ export function formatRelativeDate(unixSeconds: number, now: number = Date.now()
 export function daysSince(unixSeconds: number, now: number = Date.now() / 1000): number {
   return Math.floor(Math.max(0, now - unixSeconds) / DAY);
 }
+
+const MONTHS_PT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+/** Formata um timestamp unix (segundos) como "hoje · HH:MM" ou "14 nov 2025 · 16:20". */
+export function formatHistoryTimestamp(unixSeconds: number, now: number = Date.now() / 1000): string {
+  const date = new Date(unixSeconds * 1000);
+  const nowDate = new Date(now * 1000);
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const time = `${hours}:${minutes}`;
+
+  const isSameDay =
+    date.getFullYear() === nowDate.getFullYear() && date.getMonth() === nowDate.getMonth() && date.getDate() === nowDate.getDate();
+
+  if (isSameDay) {
+    return `hoje · ${time}`;
+  }
+
+  const day = date.getDate();
+  const month = MONTHS_PT[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year} · ${time}`;
+}
