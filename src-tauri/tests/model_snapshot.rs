@@ -6,8 +6,8 @@
 
 use molt_lib::model::{
     Artifact, ArtifactKind, CacheEntry, CacheRisk, CleanStrategy, CleanupHistoryEntry,
-    CleanupRequest, CleanupResult, CleanupTarget, GitInfo, Project, ProjectKind, ScanProgress,
-    ScanRequest,
+    CleanupRequest, CleanupResult, CleanupTarget, DiskUsage, GitInfo, Project, ProjectKind,
+    ScanProgress, ScanRequest,
 };
 use serde::Serialize;
 use std::path::PathBuf;
@@ -22,6 +22,7 @@ struct ModelSnapshot {
     cleanup_request: CleanupRequest,
     cleanup_result: CleanupResult,
     cleanup_history_entry: CleanupHistoryEntry,
+    disk_usage: DiskUsage,
 }
 
 fn build_snapshot() -> ModelSnapshot {
@@ -149,6 +150,12 @@ fn build_snapshot() -> ModelSnapshot {
         success: true,
     };
 
+    let disk_usage = DiskUsage {
+        volume_name: "Macintosh HD".to_string(),
+        total_bytes: 994_662_584_320,
+        free_bytes: 46_010_843_136,
+    };
+
     ModelSnapshot {
         project,
         project_without_git,
@@ -158,6 +165,7 @@ fn build_snapshot() -> ModelSnapshot {
         cleanup_request,
         cleanup_result,
         cleanup_history_entry,
+        disk_usage,
     }
 }
 

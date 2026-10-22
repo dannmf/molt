@@ -4,12 +4,14 @@ import moltMarkDark from "../../assets/brand/molt-mark-dark.svg";
 import moltMarkLight from "../../assets/brand/molt-mark-light.svg";
 import { CACHES_QUERY_KEY } from "../../hooks/useCachesQuery";
 import { CLEANUP_HISTORY_QUERY_KEY } from "../../hooks/useCleanupHistoryQuery";
+import { useDiskUsage } from "../../hooks/useDiskUsage";
 import { useProjectsQuery } from "../../hooks/useProjectsQuery";
-import { formatRelativeDate } from "../../lib/format";
+import { formatBytes, formatRelativeDate } from "../../lib/format";
 import type { AppView } from "../../store/useAppStore";
 import { useAppStore } from "../../store/useAppStore";
 import type { CacheEntry, CleanupHistoryEntry } from "../../types";
 import { BoxIcon, FolderIcon, HistoryIcon, MoonIcon, SunIcon, TrashIcon } from "../icons/Icons";
+import { ProgressBar } from "../shared/ProgressBar";
 
 interface NavItem {
   view: AppView;
@@ -28,7 +30,10 @@ export function Sidebar() {
   const toggleTheme = useAppStore((state) => state.toggleTheme);
   const roots = useAppStore((state) => state.roots);
   const lastScanAt = useAppStore((state) => state.lastScanAt);
+  const freedBytes = useAppStore((state) => state.freedBytes);
+  const freedBytesAt = useAppStore((state) => state.freedBytesAt);
 
+  const { data: diskUsage } = useDiskUsage();
   const { data: projects } = useProjectsQuery();
   // `enabled: false` aqui também: só lemos o que já estiver em cache, sem disparar
   // a varredura de caches (du/docker) ou a leitura do histórico antes de hora.
@@ -84,22 +89,42 @@ export function Sidebar() {
         })}
       </nav>
 
-      <button
-        type="button"
-        onClick={() => setView("onboarding")}
-        className={`mt-auto flex items-center gap-2 border-t border-line px-2.5 pt-3 text-left transition-colors duration-100 ${
-          view === "onboarding" ? "text-ink" : "text-ink-2 hover:text-ink"
-        }`}
-      >
-        <FolderIcon className="size-3.5 shrink-0 text-ink-3" />
-        <span className="flex flex-col">
-          <span className="text-[12.5px] font-medium">Pastas da varredura</span>
-          <span className="font-mono text-[11px] text-ink-3">
-            {roots.length} {roots.length === 1 ? "pasta" : "pastas"} ·{" "}
-            {lastScanAt !== null ? `varrido ${formatRelativeDate(lastScanAt)}` : "nunca varrido"}
+      <div className="mt-auto flex flex-col gap-3 border-t border-line px-2.5 pt-3">
+        {diskUsage && (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-[12.5px] font-medium text-ink">{diskUsage.volumeName}</span>
+              {freedBytes !== null && (
+                <span
+                  key={freedBytesAt}
+                  className="animate-freed-in shrink-0 rounded-xs bg-safe/15 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-safe"
+                >
+                  +{formatBytes(freedBytes)}
+                </span>
+              )}
+            </div>
+            <ProgressBar percent={((diskUsage.totalBytes - diskUsage.freeBytes) / diskUsage.totalBytes) * 100} />
+            <span className="font-mono text-[11px] text-ink-3">{formatBytes(diskUsage.freeBytes)} livres</span>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setView("onboarding")}
+          className={`flex items-center gap-2 text-left transition-colors duration-100 ${
+            view === "onboarding" ? "text-ink" : "text-ink-2 hover:text-ink"
+          }`}
+        >
+          <FolderIcon className="size-3.5 shrink-0 text-ink-3" />
+          <span className="flex flex-col">
+            <span className="text-[12.5px] font-medium">Pastas da varredura</span>
+            <span className="font-mono text-[11px] text-ink-3">
+              {roots.length} {roots.length === 1 ? "pasta" : "pastas"} ·{" "}
+              {lastScanAt !== null ? `varrido ${formatRelativeDate(lastScanAt)}` : "nunca varrido"}
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+      </div>
     </aside>
   );
 }

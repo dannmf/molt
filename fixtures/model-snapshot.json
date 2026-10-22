@@ -139,5 +139,10 @@
     "timestamp": 1732000050,
     "message": "removido /Users/dev/molt/node_modules (~1200000000 bytes)",
     "success": true
+  },
+  "disk_usage": {
+    "volumeName": "Macintosh HD",
+    "totalBytes": 994662584320,
+    "freeBytes": 46010843136
   }
 }

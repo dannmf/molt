@@ -111,3 +111,9 @@ export interface CleanupHistoryEntry {
   message: string;
   success: boolean;
 }
+
+export interface DiskUsage {
+  volumeName: string;
+  totalBytes: number;
+  freeBytes: number;
+}

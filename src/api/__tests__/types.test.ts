@@ -5,6 +5,7 @@ import type {
   CleanupHistoryEntry,
   CleanupRequest,
   CleanupResult,
+  DiskUsage,
   Project,
   ScanProgress,
   ScanRequest,
@@ -26,6 +27,7 @@ interface ModelSnapshot {
   cleanup_request: CleanupRequest;
   cleanup_result: CleanupResult;
   cleanup_history_entry: CleanupHistoryEntry;
+  disk_usage: DiskUsage;
 }
 
 const snapshot: ModelSnapshot = {
@@ -122,6 +124,11 @@ const snapshot: ModelSnapshot = {
     timestamp: 1_732_000_050,
     message: "removido /Users/dev/molt/node_modules (~1200000000 bytes)",
     success: true,
+  },
+  disk_usage: {
+    volumeName: "Macintosh HD",
+    totalBytes: 994_662_584_320,
+    freeBytes: 46_010_843_136,
   },
 };
 

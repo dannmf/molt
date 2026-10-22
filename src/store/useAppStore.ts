@@ -13,6 +13,9 @@ export type AppView = "onboarding" | "projects" | "caches" | "history";
 
 export const DEFAULT_ROOTS = ["~/Developer", "~/Projects", "~/Documents"];
 
+/** Duração do badge "+X GB liberados" na sidebar antes de desaparecer sozinho. */
+const FREED_BYTES_BADGE_DURATION_MS = 4000;
+
 function initialTheme(): Theme {
   if (typeof window === "undefined") {
     return "light";
@@ -33,6 +36,8 @@ interface AppState {
   theme: Theme;
   excludedPaths: string[];
   lastScanAt: number | null;
+  freedBytes: number | null;
+  freedBytesAt: number | null;
 
   setView: (view: AppView) => void;
   setTheme: (theme: Theme) => void;
@@ -50,7 +55,10 @@ interface AppState {
   toggleSelected: (id: string) => void;
   setSelected: (ids: string[]) => void;
   clearSelection: () => void;
+  reportFreedBytes: (bytes: number) => void;
 }
+
+let freedBytesDismissTimer: number | undefined;
 
 export const useAppStore = create<AppState>((set) => ({
   view: "onboarding",
@@ -63,6 +71,8 @@ export const useAppStore = create<AppState>((set) => ({
   theme: initialTheme(),
   excludedPaths: loadExcludedPaths(),
   lastScanAt: loadLastScanAt(),
+  freedBytes: null,
+  freedBytesAt: null,
 
   setView: (view) => set({ view }),
   setTheme: (theme) => set({ theme }),
@@ -150,4 +160,11 @@ export const useAppStore = create<AppState>((set) => ({
   setSelected: (ids) => set({ selectedIds: new Set(ids) }),
 
   clearSelection: () => set({ selectedIds: new Set() }),
+
+  /** O badge some sozinho; ver `Sidebar` para a leitura de `freedBytes`. */
+  reportFreedBytes: (bytes) => {
+    window.clearTimeout(freedBytesDismissTimer);
+    set({ freedBytes: bytes, freedBytesAt: Date.now() });
+    freedBytesDismissTimer = window.setTimeout(() => set({ freedBytes: null }), FREED_BYTES_BADGE_DURATION_MS);
+  },
 }));

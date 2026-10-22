@@ -14,11 +14,12 @@ import type {
   CleanupHistoryEntry,
   CleanupRequest,
   CleanupResult,
+  DiskUsage,
   Project,
   ScanProgress,
   ScanRequest,
 } from "../types";
-import { mockCaches, mockCleanupHistory, mockProjects } from "./mocks";
+import { mockCaches, mockCleanupHistory, mockDiskUsage, mockProjects } from "./mocks";
 
 const useMocks = import.meta.env.VITE_USE_MOCKS === "1";
 
@@ -45,6 +46,11 @@ export async function getCleanupHistory(): Promise<CleanupHistoryEntry[]> {
 export async function revealInFinder(path: string): Promise<void> {
   if (useMocks) return undefined;
   await invoke("reveal_in_finder", { path });
+}
+
+export async function diskUsage(): Promise<DiskUsage> {
+  if (useMocks) return mockDiskUsage;
+  return invoke<DiskUsage>("disk_usage");
 }
 
 /** Abre o explorador de arquivos nativo para escolher uma pasta raiz de varredura. */
