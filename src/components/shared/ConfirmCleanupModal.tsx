@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
 import { useCleanup } from "../../hooks/useCleanup";
+import { useRefreshDiskUsage } from "../../hooks/useDiskUsage";
 import { canConfirmCleanup } from "../../lib/cleanupGate";
 import type { CleanupPlan } from "../../lib/cleanupPlan";
 import { formatBytes, pathBasename } from "../../lib/format";
+import { useAppStore } from "../../store/useAppStore";
 
 /** Tempo simulado do "dry run" antes do botão Confirmar liberar. Não há chamada real
  * ao backend aqui: o mock de `runCleanup` sempre devolve zero, então o preview
@@ -26,6 +28,8 @@ export function ConfirmCleanupModal({ plan, onClose, onConfirmed }: ConfirmClean
   const [typedName, setTypedName] = useState("");
   const [trackedPlan, setTrackedPlan] = useState(plan);
   const cleanup = useCleanup();
+  const reportFreedBytes = useAppStore((state) => state.reportFreedBytes);
+  const refreshDiskUsage = useRefreshDiskUsage();
 
   if (plan !== trackedPlan) {
     setTrackedPlan(plan);
@@ -75,6 +79,8 @@ export function ConfirmCleanupModal({ plan, onClose, onConfirmed }: ConfirmClean
       { targets: plan!.targets, allowDirtyGit: plan!.requiresNameConfirmation },
       {
         onSuccess: () => {
+          reportFreedBytes(plan!.totalBytes);
+          refreshDiskUsage();
           onConfirmed(plan!);
           onClose();
         },

@@ -2,6 +2,7 @@ pub mod caches;
 pub mod cleanup;
 pub mod commands;
 pub mod detectors;
+pub mod diskinfo;
 pub mod error;
 pub mod model;
 pub mod scanner;
@@ -40,6 +41,7 @@ pub fn run() {
             commands::list_caches,
             commands::run_cleanup,
             commands::cleanup_history,
+            commands::disk_usage,
             commands::reveal_in_finder,
         ])
         .run(tauri::generate_context!())

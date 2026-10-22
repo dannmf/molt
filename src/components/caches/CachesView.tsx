@@ -48,9 +48,9 @@ function CacheRow({
 
       <p className="line-clamp-2 text-[13px] text-ink-2">{cache.description}</p>
 
-      <div dir="rtl" className="min-w-0 overflow-hidden text-left font-mono text-[11.5px] text-ink-3" title={path}>
-        <bdi dir="ltr">{path}</bdi>
-      </div>
+      <p className="min-w-0 truncate font-mono text-[11.5px] text-ink-3" title={path}>
+        {path}
+      </p>
 
       <div className="text-right">
         <p className="font-mono text-[13px] font-medium tabular-nums text-ink">{formatBytes(cache.bytes)}</p>

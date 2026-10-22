@@ -174,3 +174,12 @@ pub struct CleanupHistoryEntry {
     pub message: String,
     pub success: bool,
 }
+
+/// Uso de disco do volume onde o HOME do usuário está montado.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiskUsage {
+    pub volume_name: String,
+    pub total_bytes: u64,
+    pub free_bytes: u64,
+}

@@ -10,10 +10,11 @@ use tauri::{AppHandle, Emitter, Runtime, State};
 use crate::caches;
 use crate::cleanup::{self, CleanupContext, SystemCommandExecutor};
 use crate::detectors::{MoltArtifactDetector, MoltGitDetector, MoltKindDetector};
+use crate::diskinfo;
 use crate::error::AppError;
 use crate::model::{
-    CacheEntry, CleanupHistoryEntry, CleanupRequest, CleanupResult, Project, ScanProgress,
-    ScanRequest,
+    CacheEntry, CleanupHistoryEntry, CleanupRequest, CleanupResult, DiskUsage, Project,
+    ScanProgress, ScanRequest,
 };
 use crate::scanner::{Detectors, JwalkScanner, Scanner};
 
@@ -124,6 +125,14 @@ pub fn run_cleanup(
 pub fn cleanup_history() -> Result<Vec<CleanupHistoryEntry>, AppError> {
     let home = home_dir()?;
     Ok(cleanup::read_history(&home))
+}
+
+/// Uso de disco do volume onde o HOME do usuário está montado (nome do volume,
+/// total e espaço livre), via `df`/`diskutil`.
+#[tauri::command]
+pub fn disk_usage() -> Result<DiskUsage, AppError> {
+    let home = home_dir()?;
+    diskinfo::disk_usage(&home)
 }
 
 /// Abre o Finder com `path` selecionado (`open -R`, sem shell, binário resolvido no PATH).

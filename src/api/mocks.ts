@@ -1,4 +1,4 @@
-import type { Artifact, CacheEntry, CleanupHistoryEntry, Project } from "../types";
+import type { Artifact, CacheEntry, CleanupHistoryEntry, DiskUsage, Project } from "../types";
 
 const GB = 1024 * 1024 * 1024;
 const MB = 1024 * 1024;
@@ -334,6 +334,12 @@ export const mockCaches: CacheEntry[] = [
     "Cache de build do Go (GOCACHE), recriado no próximo build.",
   ),
 ];
+
+export const mockDiskUsage: DiskUsage = {
+  volumeName: "Macintosh HD",
+  totalBytes: 494 * GB,
+  freeBytes: 42.9 * GB,
+};
 
 export const mockCleanupHistory: CleanupHistoryEntry[] = [
   {
