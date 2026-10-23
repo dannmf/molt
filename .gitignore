@@ -15,3 +15,6 @@
 # Editores
 .vscode/
 .idea/
+
+# Claude Code
+.claude/
