@@ -5,6 +5,7 @@ pub mod detectors;
 pub mod diskinfo;
 pub mod error;
 pub mod model;
+pub mod permission;
 pub mod scanner;
 
 #[cfg(any(test, feature = "testkit"))]
@@ -43,6 +44,8 @@ pub fn run() {
             commands::cleanup_history,
             commands::disk_usage,
             commands::reveal_in_finder,
+            commands::full_disk_access_granted,
+            commands::open_full_disk_access_settings,
         ])
         .run(tauri::generate_context!())
         .expect("erro ao iniciar o Molt");

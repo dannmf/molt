@@ -53,6 +53,17 @@ export async function diskUsage(): Promise<DiskUsage> {
   return invoke<DiskUsage>("disk_usage");
 }
 
+export async function fullDiskAccessGranted(): Promise<boolean> {
+  if (useMocks) return true;
+  return invoke<boolean>("full_disk_access_granted");
+}
+
+/** Abre Ajustes do Sistema -> Privacidade e Segurança -> Acesso Total ao Disco. */
+export async function openFullDiskAccessSettings(): Promise<void> {
+  if (useMocks) return undefined;
+  await invoke("open_full_disk_access_settings");
+}
+
 /** Abre o explorador de arquivos nativo para escolher uma pasta raiz de varredura. */
 export async function pickFolder(): Promise<string | null> {
   if (useMocks) return null;

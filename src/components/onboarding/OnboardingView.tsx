@@ -1,11 +1,45 @@
 import { useState } from "react";
 
-import { pickFolder } from "../../api/client";
+import { openFullDiskAccessSettings, pickFolder } from "../../api/client";
+import { useFullDiskAccess } from "../../hooks/useFullDiskAccess";
 import { useScan } from "../../hooks/useScan";
 import type { RootScanState } from "../../lib/scanRootProgress";
 import { useAppStore } from "../../store/useAppStore";
 import { ChevronDownIcon, ChevronUpIcon, FolderIcon, ScanIcon } from "../icons/Icons";
 import { ProgressBar } from "../shared/ProgressBar";
+
+function PermissionStatus() {
+  const { data: granted, isPending } = useFullDiskAccess();
+
+  if (isPending) {
+    return (
+      <p className="text-[13px] leading-5 text-ink-2">
+        Para detectar caches de ferramentas como Xcode e simuladores, o macOS pode pedir Acesso Total ao Disco em
+        Ajustes do Sistema → Privacidade e Segurança.
+      </p>
+    );
+  }
+
+  if (granted) {
+    return <p className="text-[13px] leading-5 text-ink-2">Acesso Total ao Disco concedido.</p>;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <p className="text-[13px] leading-5 text-ink-2">
+        Para detectar caches de ferramentas como Xcode e simuladores, o macOS exige Acesso Total ao Disco em Ajustes
+        do Sistema → Privacidade e Segurança.
+      </p>
+      <button
+        type="button"
+        onClick={() => void openFullDiskAccessSettings()}
+        className="h-[30px] shrink-0 rounded-sm border border-line-strong bg-surface px-3 text-[13px] font-medium text-ink-2 transition-colors duration-100 hover:border-ink-3 hover:text-ink"
+      >
+        Abrir Ajustes do Sistema
+      </button>
+    </div>
+  );
+}
 
 function ScanningView({
   rootCount,
@@ -141,10 +175,7 @@ export function OnboardingView() {
           </div>
           <div className="flex gap-4 border-b border-line py-3.5">
             <span className="w-[88px] shrink-0 font-mono text-[11.5px] text-ink-3">Permissão</span>
-            <p className="text-[13px] leading-5 text-ink-2">
-              Para detectar caches de ferramentas como Xcode e simuladores, o macOS pode pedir Acesso Total ao Disco
-              em Ajustes do Sistema → Privacidade e Segurança.
-            </p>
+            <PermissionStatus />
           </div>
         </div>
 

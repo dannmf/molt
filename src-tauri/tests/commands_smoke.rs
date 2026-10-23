@@ -24,6 +24,8 @@ fn build_app() -> App<MockRuntime> {
             molt_lib::commands::list_caches,
             molt_lib::commands::run_cleanup,
             molt_lib::commands::reveal_in_finder,
+            molt_lib::commands::full_disk_access_granted,
+            molt_lib::commands::open_full_disk_access_settings,
         ])
         .build(mock_context(noop_assets()))
         .expect("falha ao construir app mock")
@@ -104,5 +106,23 @@ fn reveal_in_finder_opens_without_panicking() {
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner());
     let result = molt_lib::commands::reveal_in_finder("/tmp".into());
+    assert!(result.is_ok());
+}
+
+#[test]
+fn full_disk_access_granted_returns_a_bool_without_panicking() {
+    let _guard = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let result = molt_lib::commands::full_disk_access_granted();
+    assert!(result.is_ok());
+}
+
+#[test]
+fn open_full_disk_access_settings_opens_without_panicking() {
+    let _guard = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let result = molt_lib::commands::open_full_disk_access_settings();
     assert!(result.is_ok());
 }
