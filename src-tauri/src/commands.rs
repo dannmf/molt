@@ -16,6 +16,7 @@ use crate::model::{
     CacheEntry, CleanupHistoryEntry, CleanupRequest, CleanupResult, DiskUsage, Project,
     ScanProgress, ScanRequest,
 };
+use crate::permission;
 use crate::scanner::{Detectors, JwalkScanner, Scanner};
 
 /// Estado mantido entre comandos: a lista de caminhos permitidos para limpeza
@@ -149,6 +150,32 @@ pub fn reveal_in_finder(path: PathBuf) -> Result<(), AppError> {
     } else {
         Err(AppError::CommandFailed(format!(
             "'open -R' terminou com código {status}"
+        )))
+    }
+}
+
+/// Indica se o app tem Acesso Total ao Disco no macOS. Não há API pública para
+/// solicitar essa permissão por código; o frontend usa isto para decidir se
+/// mostra o atalho para os Ajustes do Sistema.
+#[tauri::command]
+pub fn full_disk_access_granted() -> Result<bool, AppError> {
+    Ok(permission::full_disk_access_granted())
+}
+
+/// Abre o painel de Privacidade e Segurança > Acesso Total ao Disco nos
+/// Ajustes do Sistema (`open`, sem shell, binário resolvido no PATH).
+#[tauri::command]
+pub fn open_full_disk_access_settings() -> Result<(), AppError> {
+    let status = std::process::Command::new("open")
+        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")
+        .status()
+        .map_err(|e| AppError::CommandFailed(format!("não foi possível iniciar 'open': {e}")))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::CommandFailed(format!(
+            "'open' terminou com código {status}"
         )))
     }
 }
