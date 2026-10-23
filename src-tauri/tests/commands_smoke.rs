@@ -8,6 +8,14 @@ use molt_lib::model::{CleanupRequest, CleanupTarget, ScanRequest};
 use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
 use tauri::{App, Manager};
 
+/// Força os testes deste arquivo a rodar um de cada vez. `scan_projects` e
+/// `list_caches` disparam varreduras reais via jwalk/rayon sobre o pool global
+/// de threads; rodando em paralelo (padrão do harness do Rust), ocasionalmente
+/// uma varredura observa zero resultados por uma corrida no pool compartilhado
+/// — não reproduz isolado, só quando mais de um teste deste arquivo varre ao
+/// mesmo tempo. O app real nunca dispara duas varreduras concorrentes.
+static TEST_LOCK: Mutex<()> = Mutex::new(());
+
 fn build_app() -> App<MockRuntime> {
     mock_builder()
         .manage(Mutex::new(AppState::default()))
@@ -23,6 +31,9 @@ fn build_app() -> App<MockRuntime> {
 
 #[test]
 fn scan_projects_finds_fixture_project_and_tracks_allowed_paths() {
+    let _guard = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let home = tempfile::tempdir().unwrap();
     molt_lib::testkit::fixture_node_project(home.path(), "app", 1).unwrap();
 
@@ -53,6 +64,9 @@ fn scan_projects_finds_fixture_project_and_tracks_allowed_paths() {
 
 #[test]
 fn list_caches_returns_real_catalog() {
+    let _guard = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let app = build_app();
     let state = app.state::<Mutex<AppState>>();
 
@@ -63,6 +77,9 @@ fn list_caches_returns_real_catalog() {
 
 #[test]
 fn run_cleanup_rejects_target_outside_allowed_paths() {
+    let _guard = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let app = build_app();
     let state = app.state::<Mutex<AppState>>();
 
@@ -83,6 +100,9 @@ fn run_cleanup_rejects_target_outside_allowed_paths() {
 
 #[test]
 fn reveal_in_finder_opens_without_panicking() {
+    let _guard = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let result = molt_lib::commands::reveal_in_finder("/tmp".into());
     assert!(result.is_ok());
 }

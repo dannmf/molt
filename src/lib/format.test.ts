@@ -59,11 +59,11 @@ describe("daysSince", () => {
 
 describe("pathBasename", () => {
   it("extrai o último segmento de um caminho", () => {
-    expect(pathBasename("/Users/daniel/www/portifolio/node_modules")).toBe("node_modules");
+    expect(pathBasename("/Users/dev/code/project/node_modules")).toBe("node_modules");
   });
 
   it("ignora barras finais", () => {
-    expect(pathBasename("/Users/daniel/www/portifolio/node_modules/")).toBe("node_modules");
+    expect(pathBasename("/Users/dev/code/project/node_modules/")).toBe("node_modules");
   });
 
   it("devolve o próprio valor quando não há barra", () => {

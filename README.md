@@ -52,9 +52,14 @@ conhecidos, e só apaga o que você confirmar explicitamente.
    Go build cache, Docker) com o tamanho de cada um.
 4. **Limpeza segura** — você escolhe o que apagar; o Molt sempre manda para a Lixeira
    do macOS (nunca `rm -rf`), nunca segue symlinks e recusa apagar um projeto com
-   mudanças não commitadas, a menos que você confirme explicitamente.
+   mudanças não commitadas, a menos que você confirme explicitamente. Dá pra ignorar
+   um projeto específico, removendo-o das próximas varreduras.
 5. **Histórico** — toda limpeza fica registrada, com o que foi apagado e quanto espaço
    foi liberado.
+6. **Indicador de disco** — a barra lateral mostra o espaço livre/ocupado do volume em
+   tempo real e, depois de cada limpeza, quanto espaço acabou de ser liberado.
+
+Tema claro e escuro, com alternância pela barra lateral.
 
 ## Como usar
 
